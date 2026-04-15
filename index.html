@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>كريم 2 • تيليجرام ستايل</title>
+  <meta name="description" content="واجهة شات احترافية عربية تشبه تيليجرام ومجهزة للربط لاحقًا بقاعدة البيانات." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar" aria-label="القائمة الجانبية">
+      <div class="sidebar-top">
+        <button class="icon-btn mobile-only" id="closeSidebarBtn" type="button" aria-label="إغلاق القائمة">
+          <i data-lucide="x"></i>
+        </button>
+
+        <div class="profile-card">
+          <div class="avatar">K</div>
+          <div class="profile-text">
+            <strong>كريم 2</strong>
+            <span>شات منظم وسريع</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="search-wrap">
+        <i data-lucide="search"></i>
+        <input id="searchInput" type="text" placeholder="ابحث في الرسائل..." autocomplete="off" />
+      </div>
+
+      <div class="chat-summary">
+        <div class="summary-box">
+          <span>الحالة</span>
+          <strong id="statusBadge">Local</strong>
+        </div>
+        <div class="summary-box">
+          <span>الرسائل</span>
+          <strong id="totalCountText">0</strong>
+        </div>
+      </div>
+
+      <nav class="nav-grid">
+        <button class="nav-btn active" data-tab="chat" type="button">
+          <i data-lucide="messages-square"></i>
+          <span>المحادثة</span>
+        </button>
+        <button class="nav-btn" data-tab="search" type="button">
+          <i data-lucide="search"></i>
+          <span>البحث</span>
+        </button>
+        <button class="nav-btn" data-tab="tools" type="button">
+          <i data-lucide="settings-2"></i>
+          <span>الأدوات</span>
+        </button>
+      </nav>
+
+      <div class="side-panels">
+        <section class="panel active" id="panel-chat">
+          <div class="panel-card">
+            <div class="panel-head">
+              <h2>الغرفة الحالية</h2>
+              <span class="pill">عام</span>
+            </div>
+            <button class="room-card active" type="button">
+              <div class="room-icon">A</div>
+              <div class="room-text">
+                <strong>الشات العام</strong>
+                <span id="chatCountText">0 رسالة</span>
+              </div>
+              <i data-lucide="chevron-left"></i>
+            </button>
+          </div>
+
+          <div class="panel-card">
+            <div class="panel-head">
+              <h2>الجاهزية</h2>
+              <span class="pill soft">Ready</span>
+            </div>
+            <p class="muted" id="statusText">
+              الواجهة تعمل محليًا الآن، ومجهزة لملف قاعدة البيانات لاحقًا بدون تعديل التصميم.
+            </p>
+          </div>
+        </section>
+
+        <section class="panel" id="panel-search">
+          <div class="panel-card">
+            <div class="panel-head">
+              <h2>نتائج البحث</h2>
+              <span class="pill" id="searchCountBadge">0</span>
+            </div>
+            <div id="searchResults" class="stack">
+              <div class="empty-state">اكتب في البحث.</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="panel-tools">
+          <div class="panel-card">
+            <div class="panel-head">
+              <h2>الأدوات</h2>
+              <span class="pill soft">Quick</span>
+            </div>
+
+            <div class="tool-list">
+              <div class="tool-row">
+                <div>
+                  <strong>نسخ آخر رسالة</strong>
+                  <span>انسخ آخر محتوى محفوظ</span>
+                </div>
+                <button class="mini-btn" type="button" id="copyLastBtn">نسخ</button>
+              </div>
+
+              <div class="tool-row">
+                <div>
+                  <strong>مسح الرسائل</strong>
+                  <span>يحذف الرسائل من الجهاز الآن</span>
+                </div>
+                <button class="mini-btn danger" type="button" id="clearBtn">مسح</button>
+              </div>
+
+              <div class="tool-row">
+                <div>
+                  <strong>وضع التخزين</strong>
+                  <span>يبين هل الاتصال بقاعدة البيانات جاهز</span>
+                </div>
+                <span class="mini-tag" id="storageModeText">محلي</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="icon-btn" id="privateMessagesBtn" type="button" aria-label="الرسائل الخاصة" title="الرسائل الخاصة">
+            <i data-lucide="message-circle"></i>
+          </button>
+
+          <button class="icon-btn mobile-only" id="openSidebarBtn" type="button" aria-label="فتح القائمة" title="القائمة">
+            <i data-lucide="menu"></i>
+          </button>
+
+          <button class="icon-btn" id="scrollTopBtn" type="button" aria-label="السهم للأعلى" title="أعلى الصفحة">
+            <i data-lucide="arrow-up"></i>
+          </button>
+        </div>
+
+        <button class="title-chip" id="chatTitleBtn" type="button" aria-label="تحديث الصفحة">
+          شات نار
+        </button>
+
+        <div class="topbar-right">
+          <span class="topbar-note">عام</span>
+        </div>
+      </header>
+
+      <section class="hero">
+        <div class="hero-copy">
+          <h2>كريم 2</h2>
+          <p>
+            تصميم واضح ومريح للمستخدم، بخانات مرتبة، وبحث سريع، وبلا تعقيد.
+            جاهز للربط لاحقًا بملف قاعدة البيانات من غير ما نلمس الواجهة.
+          </p>
+
+          <div class="hero-actions">
+            <button class="btn btn-primary" id="goToChatBtn" type="button">اذهب للشات</button>
+            <button class="btn btn-secondary" id="goToSearchBtn" type="button">البحث</button>
+            <button class="btn btn-secondary" id="goToToolsBtn" type="button">الأدوات</button>
+          </div>
+        </div>
+
+        <div class="hero-grid">
+          <div class="hero-card">
+            <strong>واجهة نظيفة</strong>
+            <span>شكل بسيط ومريح للعين</span>
+          </div>
+          <div class="hero-card">
+            <strong>جاهز للربط</strong>
+            <span>ملف DB يتركب لاحقًا بسهولة</span>
+          </div>
+          <div class="hero-card">
+            <strong>بحث فوري</strong>
+            <span>فلترة الرسائل فور الكتابة</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="stats">
+        <div class="stat">
+          <i data-lucide="message-circle"></i>
+          <div>
+            <strong id="statMessages">0</strong>
+            <span>رسالة محفوظة</span>
+          </div>
+        </div>
+
+        <div class="stat">
+          <i data-lucide="sparkles"></i>
+          <div>
+            <strong>Modern</strong>
+            <span>تصميم شيك ومرتب</span>
+          </div>
+        </div>
+
+        <div class="stat">
+          <i data-lucide="plug-zap"></i>
+          <div>
+            <strong>Ready</strong>
+            <span>قابل للربط لاحقًا</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="chat-shell" id="chatShell">
+        <div class="chat-head">
+          <div class="chat-head-left">
+            <div class="chat-avatar">🔥</div>
+            <div>
+              <h2>الشات العام</h2>
+              <p>الرسائل تظهر هنا بشكل منظم</p>
+            </div>
+          </div>
+
+          <div class="pill">عام</div>
+        </div>
+
+        <div class="messages" id="messages">
+          <div class="empty-state centered">اكتب أول رسالة من الأسفل.</div>
+        </div>
+
+        <form class="composer" id="msgForm" autocomplete="off">
+          <button class="attach-btn" type="button" aria-label="إرفاق">
+            <i data-lucide="paperclip"></i>
+          </button>
+          <input id="msgInput" type="text" placeholder="اكتب رسالة..." maxlength="1000" />
+          <button class="send-btn" type="submit" aria-label="إرسال">
+            <i data-lucide="send"></i>
+          </button>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <div class="overlay" id="overlay"></div>
+  <script type="module" src="./main.js"></script>
+</body>
+</html>
