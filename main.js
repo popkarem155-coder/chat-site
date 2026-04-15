@@ -240,4 +240,138 @@ async function sendMessage(text) {
     return;
   }
 
-  state
+  state.messages.push(message);
+  persistLocalMessages();
+  renderMessages();
+}
+
+async function clearMessages() {
+  const ok = confirm("مسح كل الرسائل؟");
+  if (!ok) return;
+
+  if (externalDB && typeof externalDB.clearMessages === "function") {
+    await externalDB.clearMessages();
+    return;
+  }
+
+  state.messages = [];
+  persistLocalMessages();
+  renderMessages();
+}
+
+async function copyLastMessage() {
+  const last = state.messages[state.messages.length - 1];
+  if (!last) return;
+
+  try {
+    await navigator.clipboard.writeText(last.text);
+  } catch {
+    const temp = document.createElement("textarea");
+    temp.value = last.text;
+    document.body.appendChild(temp);
+    temp.select();
+    document.execCommand("copy");
+    temp.remove();
+  }
+}
+
+function applyExternalSnapshot(messages = [], mode = "live") {
+  state.messages = Array.isArray(messages) ? messages.map(normalizeMessage) : [];
+  setMode(mode);
+  renderMessages();
+}
+
+function initIcons() {
+  if (window.lucide?.createIcons) {
+    window.lucide.createIcons();
+  }
+}
+
+function bindEvents() {
+  ui.openSidebarBtn?.addEventListener("click", openSidebar);
+  ui.closeSidebarBtn?.addEventListener("click", closeSidebar);
+  ui.overlay?.addEventListener("click", closeSidebar);
+
+  ui.scrollTopBtn?.addEventListener("click", () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+
+  ui.privateMessagesBtn?.addEventListener("click", () => {
+    window.dispatchEvent(new CustomEvent("kareem2:open-private-messages"));
+  });
+
+  ui.chatTitleBtn?.addEventListener("click", () => {
+    window.location.reload();
+  });
+
+  ui.goToChatBtn?.addEventListener("click", scrollToChat);
+  ui.goToSearchBtn?.addEventListener("click", () => setTab("search"));
+  ui.goToToolsBtn?.addEventListener("click", () => setTab("tools"));
+
+  ui.navButtons.forEach((btn) => {
+    btn.addEventListener("click", () => setTab(btn.dataset.tab));
+  });
+
+  ui.searchInput?.addEventListener("input", (e) => {
+    state.query = e.target.value;
+    renderMessages();
+  });
+
+  ui.msgForm?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const text = ui.msgInput.value.trim();
+    if (!text) return;
+
+    await sendMessage(text);
+    ui.msgInput.value = "";
+    ui.msgInput.focus();
+  });
+
+  ui.clearBtn?.addEventListener("click", async () => {
+    try {
+      await clearMessages();
+    } catch (error) {
+      console.error("Clear messages error:", error);
+      alert("تعذر مسح الرسائل الآن.");
+    }
+  });
+
+  ui.copyLastBtn?.addEventListener("click", copyLastMessage);
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeSidebar();
+  });
+}
+
+window.KAREEM2_CHAT = {
+  getMessages: () => [...state.messages],
+  setQuery: (queryText) => {
+    state.query = String(queryText || "");
+    if (ui.searchInput) ui.searchInput.value = state.query;
+    renderMessages();
+  },
+  addMessage: async (text) => sendMessage(String(text || "")),
+  clearMessages: async () => clearMessages(),
+  setMessages: (messages) => applyExternalSnapshot(messages, externalDB ? "live" : "db-ready"),
+  setMode: setMode
+};
+
+bindEvents();
+initIcons();
+window.addEventListener("load", initIcons);
+document.addEventListener("DOMContentLoaded", initIcons);
+
+if (externalDB && typeof externalDB.subscribe === "function") {
+  setMode("db-ready");
+  const maybeUnsubscribe = externalDB.subscribe((messages) => {
+    applyExternalSnapshot(messages, "live");
+  });
+
+  if (typeof maybeUnsubscribe === "function") {
+    window.KAREEM2_CHAT.unsubscribe = maybeUnsubscribe;
+  }
+} else {
+  state.messages = loadLocalMessages();
+  setMode("local");
+  renderMessages();
+}
