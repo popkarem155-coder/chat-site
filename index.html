@@ -39,7 +39,7 @@
     <aside class="sidebar" id="sidebar" aria-label="قائمة المتصلين">
       <div class="sidebar-top">
         <div class="brand">
-          <div class="brand-mark">K3</div>
+          <div class="brand-mark">N</div>
           <div class="brand-copy">
             <strong>شات نار</strong>
           </div>
@@ -60,7 +60,9 @@
         <span class="pill soft" id="onlineCountBadge">0</span>
       </div>
 
-      <div class="online-list" id="onlineList"></div>
+      <div class="online-list" id="onlineList">
+        <div class="empty-state">جارٍ التحميل...</div>
+      </div>
     </aside>
 
     <main class="main">
@@ -75,7 +77,11 @@
           <span>شات نار</span>
         </button>
 
-        <div class="status-chip" id="connectionPill">محلي</div>
+        <div class="topbar-right">
+          <button class="icon-btn" id="authBtn" type="button" aria-label="الحساب" title="الحساب">
+            <svg class="icon"><use href="#i-user"></use></svg>
+          </button>
+        </div>
       </header>
 
       <section class="chat-shell">
