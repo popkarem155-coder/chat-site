@@ -4,14 +4,726 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>شات نار</title>
-  <meta name="description" content="واجهة شات عربية عصرية ومنظمة، جاهزة للتوسع والربط لاحقًا." />
+  <meta name="description" content="منصة شات عربية احترافية بتصميم عصري جاهز للتوسع." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./style.css" />
+
+  <style>
+    :root {
+      --bg: #0d0714;
+      --bg-2: #120b1d;
+      --panel: rgba(26, 16, 40, 0.92);
+      --panel-2: rgba(33, 20, 51, 0.98);
+      --line: rgba(255, 255, 255, 0.08);
+      --line-strong: rgba(255, 255, 255, 0.14);
+      --text: #f7f1ff;
+      --muted: rgba(247, 241, 255, 0.70);
+      --muted-2: rgba(247, 241, 255, 0.50);
+      --accent: #ff4fd8;
+      --accent-2: #8f59ff;
+      --shadow: 0 24px 80px rgba(0, 0, 0, 0.38);
+      --radius-xl: 28px;
+      --radius-lg: 22px;
+      --radius-md: 18px;
+      --radius-sm: 14px;
+      --sidebar-w: 390px;
+      --topbar-h: 72px;
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(circle at top right, rgba(255, 79, 216, 0.16), transparent 28%),
+        radial-gradient(circle at top left, rgba(143, 89, 255, 0.18), transparent 24%),
+        linear-gradient(180deg, var(--bg), #08050c 72%);
+      color: var(--text);
+      font-family: "Cairo", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    body {
+      overflow: hidden;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .app-shell {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: row-reverse;
+    }
+
+    .sidebar {
+      width: var(--sidebar-w);
+      min-width: var(--sidebar-w);
+      background: linear-gradient(180deg, rgba(33, 20, 51, 0.98), rgba(19, 12, 30, 0.98));
+      border-inline-start: 1px solid var(--line);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(18px);
+      overflow: auto;
+      transition: transform 0.25s ease;
+    }
+
+    .sidebar-top {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-mark {
+      width: 44px;
+      height: 44px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, rgba(255, 79, 216, 0.2), rgba(143, 89, 255, 0.22));
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-weight: 900;
+      color: var(--text);
+      letter-spacing: 0.4px;
+    }
+
+    .brand-copy strong {
+      font-size: 1.05rem;
+      font-weight: 900;
+    }
+
+    .icon-btn,
+    .title-chip,
+    .send-btn,
+    .tiny-btn {
+      border: 0;
+      outline: none;
+      transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, opacity 0.18s ease;
+    }
+
+    .icon-btn {
+      width: 46px;
+      height: 46px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid transparent;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text);
+      flex: 0 0 auto;
+    }
+
+    .icon-btn:hover,
+    .icon-btn:focus-visible,
+    .title-chip:hover,
+    .title-chip:focus-visible,
+    .send-btn:hover,
+    .send-btn:focus-visible,
+    .tiny-btn:hover,
+    .tiny-btn:focus-visible {
+      transform: translateY(-1px);
+      border-color: var(--line-strong);
+    }
+
+    .icon {
+      width: 20px;
+      height: 20px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      display: block;
+    }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--line);
+    }
+
+    .search-box input {
+      width: 100%;
+      background: transparent;
+      border: 0;
+      color: var(--text);
+      outline: none;
+    }
+
+    .search-box input::placeholder {
+      color: var(--muted-2);
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-inline: 2px;
+      margin-top: 2px;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 900;
+    }
+
+    .pill {
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: rgba(255, 79, 216, 0.12);
+      border: 1px solid rgba(255, 79, 216, 0.18);
+      color: #ffd9f5;
+      font-size: 0.82rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .pill.soft {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: var(--line);
+      color: var(--muted);
+    }
+
+    .online-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow: auto;
+      padding-bottom: 10px;
+      flex: 1;
+    }
+
+    .user-row {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      min-height: 72px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.035);
+      border: 1px solid var(--line);
+      color: var(--text);
+      text-align: start;
+    }
+
+    .user-row:hover {
+      background: rgba(255, 255, 255, 0.055);
+      border-color: rgba(255, 255, 255, 0.14);
+    }
+
+    .user-row.selected {
+      background: linear-gradient(135deg, rgba(255, 79, 216, 0.12), rgba(143, 89, 255, 0.12));
+      border-color: rgba(255, 79, 216, 0.24);
+    }
+
+    .user-main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: transparent;
+      border: 0;
+      color: inherit;
+      padding: 0;
+      min-width: 0;
+      text-align: start;
+    }
+
+    .avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 16px;
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      background: linear-gradient(135deg, rgba(255, 79, 216, 0.18), rgba(143, 89, 255, 0.22));
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      font-weight: 900;
+      overflow: hidden;
+    }
+
+    .avatar.photo {
+      background-size: cover;
+      background-position: center;
+    }
+
+    .user-copy {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .user-copy strong {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.98rem;
+      font-weight: 900;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .user-copy span {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .self-chip {
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: rgba(255, 79, 216, 0.14);
+      color: #ffd3f2;
+      border: 1px solid rgba(255, 79, 216, 0.18);
+      font-size: 0.72rem;
+      font-weight: 800;
+    }
+
+    .tiny-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid transparent;
+      color: var(--text);
+      flex: 0 0 auto;
+    }
+
+    .main {
+      flex: 1;
+      min-width: 0;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .topbar {
+      min-height: var(--topbar-h);
+      display: grid;
+      grid-template-columns: 56px minmax(0, 1fr) 56px;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 26px;
+      background: rgba(23, 14, 37, 0.72);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .topbar-left,
+    .topbar-right {
+      display: flex;
+      align-items: center;
+    }
+
+    .topbar-right {
+      justify-content: flex-end;
+    }
+
+    .title-chip {
+      justify-self: center;
+      min-width: 180px;
+      padding: 12px 20px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 79, 216, 0.18);
+      background: linear-gradient(135deg, rgba(255, 79, 216, 0.16), rgba(143, 89, 255, 0.16));
+      color: var(--text);
+      font-weight: 900;
+      font-size: 1.02rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      letter-spacing: 0.2px;
+    }
+
+    .chat-shell {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 16px;
+      border-radius: var(--radius-xl);
+      background: rgba(25, 15, 39, 0.74);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .chat-head,
+    .private-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 4px 2px 2px;
+    }
+
+    .chat-head-left,
+    .private-head-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .chat-avatar,
+    .private-avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, rgba(255, 79, 216, 0.20), rgba(143, 89, 255, 0.24));
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      font-weight: 900;
+      font-size: 1.15rem;
+      flex: 0 0 auto;
+    }
+
+    .chat-head h1,
+    .private-head h2 {
+      margin: 0;
+      font-size: 1.2rem;
+      font-weight: 900;
+    }
+
+    .chat-head p,
+    .private-head p {
+      margin: 3px 0 0;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .messages {
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+      padding: 4px 2px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      scroll-behavior: smooth;
+    }
+
+    .msg {
+      width: fit-content;
+      max-width: min(760px, 82%);
+      padding: 12px 14px;
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.045);
+      border: 1px solid var(--line);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-self: flex-start;
+    }
+
+    .msg.self {
+      align-self: flex-end;
+      background: linear-gradient(135deg, rgba(255, 79, 216, 0.14), rgba(143, 89, 255, 0.12));
+      border-color: rgba(255, 79, 216, 0.18);
+    }
+
+    .msg-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .msg-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .msg-meta .mini-avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      font-weight: 900;
+      font-size: 0.75rem;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+
+    .msg-meta .mini-avatar.photo {
+      background-size: cover;
+      background-position: center;
+    }
+
+    .msg-meta .name {
+      font-size: 0.86rem;
+      font-weight: 900;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .msg-time {
+      font-size: 0.73rem;
+      color: var(--muted-2);
+      white-space: nowrap;
+    }
+
+    .msg-text {
+      margin: 0;
+      white-space: pre-wrap;
+      line-height: 1.8;
+      color: var(--text);
+      font-size: 0.98rem;
+      word-break: break-word;
+    }
+
+    .msg-actions {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .msg-action {
+      width: 36px;
+      height: 36px;
+      border-radius: 14px;
+      border: 1px solid transparent;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .msg-action:hover {
+      background: rgba(255, 255, 255, 0.09);
+    }
+
+    .composer {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--line);
+    }
+
+    .composer input {
+      flex: 1;
+      min-width: 0;
+      height: 52px;
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: var(--text);
+      font-size: 0.98rem;
+    }
+
+    .composer input::placeholder {
+      color: var(--muted-2);
+    }
+
+    .send-btn {
+      width: 52px;
+      height: 52px;
+      border-radius: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text);
+      background: linear-gradient(135deg, rgba(255, 79, 216, 0.96), rgba(143, 89, 255, 0.94));
+      box-shadow: 0 14px 28px rgba(255, 79, 216, 0.16);
+    }
+
+    .send-btn:hover {
+      filter: brightness(1.05);
+    }
+
+    .empty-state {
+      padding: 18px;
+      border-radius: 20px;
+      border: 1px dashed rgba(255, 255, 255, 0.12);
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .empty-state.centered {
+      margin: auto;
+      text-align: center;
+    }
+
+    .private-drawer {
+      position: fixed;
+      top: 16px;
+      bottom: 16px;
+      left: 16px;
+      width: min(420px, calc(100vw - 32px));
+      border-radius: 28px;
+      background: rgba(20, 12, 31, 0.96);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 16px;
+      transform: translateX(-112%);
+      transition: transform 0.24s ease;
+      z-index: 35;
+    }
+
+    .private-drawer.open {
+      transform: translateX(0);
+    }
+
+    .private-messages {
+      min-height: 0;
+      flex: 1;
+    }
+
+    .private-composer {
+      margin-top: auto;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(4, 3, 8, 0.6);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s ease;
+      z-index: 30;
+    }
+
+    .overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    @media (max-width: 1100px) {
+      .app-shell {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        width: min(var(--sidebar-w), calc(100vw - 42px));
+        min-width: 0;
+        z-index: 40;
+        transform: translateX(110%);
+        box-shadow: var(--shadow);
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .main {
+        padding: 14px;
+      }
+
+      .title-chip {
+        min-width: 0;
+        padding-inline: 18px;
+      }
+
+      .private-drawer {
+        top: 14px;
+        bottom: 14px;
+        left: 14px;
+        width: auto;
+        max-width: none;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .topbar {
+        grid-template-columns: 52px minmax(0, 1fr) 52px;
+        padding: 8px;
+      }
+
+      .chat-shell,
+      .private-drawer {
+        border-radius: 24px;
+      }
+
+      .composer input {
+        height: 48px;
+      }
+
+      .send-btn {
+        width: 48px;
+        height: 48px;
+      }
+
+      .msg {
+        max-width: 92%;
+      }
+
+      .chat-head,
+      .private-head {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .chat-head-left,
+      .private-head-left {
+        width: 100%;
+      }
+
+      .pill {
+        align-self: flex-start;
+      }
+    }
+  </style>
 </head>
 <body>
-  <svg aria-hidden="true" focusable="false" class="svg-sprite">
+  <svg aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden">
     <symbol id="i-menu" viewBox="0 0 24 24">
       <path d="M4 7h16M4 12h16M4 17h16" />
     </symbol>
@@ -45,13 +757,13 @@
           </div>
         </div>
 
-        <button class="icon-btn mobile-only" id="closeSidebarBtn" type="button" aria-label="إغلاق القائمة" title="إغلاق القائمة">
+        <button class="icon-btn" id="closeSidebarBtn" type="button" aria-label="إغلاق القائمة" title="إغلاق القائمة" style="display:none">
           <svg class="icon"><use href="#i-x"></use></svg>
         </button>
       </div>
 
       <div class="search-box">
-        <svg class="icon muted-icon"><use href="#i-search"></use></svg>
+        <svg class="icon" style="color: var(--muted-2);"><use href="#i-search"></use></svg>
         <input id="onlineSearchInput" type="text" placeholder="ابحث عن متصل..." autocomplete="off" />
       </div>
 
@@ -140,6 +852,530 @@
 
   <div class="overlay" id="overlay"></div>
 
-  <script type="module" src="./main.js"></script>
+  <script>
+    const state = {
+      me: {
+        uid: "me-1",
+        name: "أنت",
+        photoURL: ""
+      },
+      onlineUsers: [
+        { uid: "u1", name: "سارة", photoURL: "", lastSeen: Date.now() - 12000 },
+        { uid: "u2", name: "أحمد", photoURL: "", lastSeen: Date.now() - 22000 },
+        { uid: "u3", name: "مريم", photoURL: "", lastSeen: Date.now() - 32000 },
+        { uid: "u4", name: "نور", photoURL: "", lastSeen: Date.now() - 42000 },
+        { uid: "u5", name: "خالد", photoURL: "", lastSeen: Date.now() - 52000 },
+        { uid: "u6", name: "ليلى", photoURL: "", lastSeen: Date.now() - 62000 },
+        { uid: "u7", name: "يوسف", photoURL: "", lastSeen: Date.now() - 72000 },
+        { uid: "u8", name: "هنا", photoURL: "", lastSeen: Date.now() - 82000 },
+      ],
+      publicMessages: [
+        {
+          id: "m1",
+          from: "u1",
+          fromName: "سارة",
+          fromPhotoURL: "",
+          text: "أهلًا بك في شات نار.",
+          clientTime: Date.now() - 240000
+        },
+        {
+          id: "m2",
+          from: "u2",
+          fromName: "أحمد",
+          fromPhotoURL: "",
+          text: "التصميم صار أهدأ وأوضح.",
+          clientTime: Date.now() - 180000
+        }
+      ],
+      privateMessages: [],
+      selectedPrivateUser: null,
+      onlineSearch: "",
+      sidebarOpen: false,
+      privateOpen: false
+    };
+
+    const els = {};
+    function $(id) { return document.getElementById(id); }
+
+    function initials(name) {
+      const clean = String(name || "").trim();
+      return clean ? clean.slice(0, 1).toUpperCase() : "؟";
+    }
+
+    function formatClock(ms) {
+      try {
+        return new Intl.DateTimeFormat("ar-EG", {
+          hour: "2-digit",
+          minute: "2-digit"
+        }).format(new Date(ms));
+      } catch {
+        return "";
+      }
+    }
+
+    function formatRelative(ms) {
+      const diff = Date.now() - ms;
+      if (diff < 10000) return "الآن";
+      if (diff < 60000) return "منذ قليل";
+      if (diff < 3600000) return `منذ ${Math.max(1, Math.round(diff / 60000))} د`;
+      return `منذ ${Math.max(1, Math.round(diff / 3600000))} س`;
+    }
+
+    function syncOverlay() {
+      els.overlay.classList.toggle("show", state.sidebarOpen || state.privateOpen);
+    }
+
+    function openSidebar() {
+      state.sidebarOpen = true;
+      els.sidebar.classList.add("open");
+      syncOverlay();
+    }
+
+    function closeSidebar() {
+      state.sidebarOpen = false;
+      els.sidebar.classList.remove("open");
+      syncOverlay();
+    }
+
+    function openPrivateDrawer() {
+      state.privateOpen = true;
+      els.privateDrawer.classList.add("open");
+      syncOverlay();
+    }
+
+    function closePrivateDrawer() {
+      state.privateOpen = false;
+      els.privateDrawer.classList.remove("open");
+      syncOverlay();
+    }
+
+    function isOnline(user) {
+      return Date.now() - (user.lastSeen || 0) <= 90000;
+    }
+
+    function visibleOnlineUsers() {
+      const q = state.onlineSearch.trim().toLowerCase();
+      return state.onlineUsers
+        .filter(u => isOnline(u))
+        .filter(u => {
+          if (!q) return true;
+          return String(u.name || "").toLowerCase().includes(q) || String(u.uid).toLowerCase().includes(q);
+        })
+        .sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0));
+    }
+
+    function getThreadId(a, b) {
+      return [a, b].sort().join("__");
+    }
+
+    function ensurePrivateThread() {
+      if (!state.selectedPrivateUser) return [];
+      const threadId = getThreadId(state.me.uid, state.selectedPrivateUser.uid);
+      if (!state.privateMessages[threadId]) state.privateMessages[threadId] = [];
+      return state.privateMessages[threadId];
+    }
+
+    function createMiniAvatar(name, photoURL) {
+      const div = document.createElement("div");
+      div.className = "mini-avatar";
+      if (photoURL) {
+        div.classList.add("photo");
+        div.style.backgroundImage = `url("${photoURL}")`;
+        div.textContent = "";
+      } else {
+        div.textContent = initials(name);
+      }
+      return div;
+    }
+
+    function createMessageCard(message, currentUid) {
+      const isSelf = message.from === currentUid;
+      const card = document.createElement("article");
+      card.className = `msg${isSelf ? " self" : ""}`;
+
+      const head = document.createElement("div");
+      head.className = "msg-head";
+
+      const meta = document.createElement("div");
+      meta.className = "msg-meta";
+
+      const mini = createMiniAvatar(message.fromName || "مستخدم", message.fromPhotoURL || "");
+      const label = document.createElement("div");
+      label.className = "name";
+      label.textContent = isSelf ? "أنت" : (message.fromName || "مستخدم");
+
+      meta.appendChild(mini);
+      meta.appendChild(label);
+
+      const time = document.createElement("div");
+      time.className = "msg-time";
+      time.textContent = formatClock(message.clientTime || Date.now());
+
+      head.appendChild(meta);
+      head.appendChild(time);
+
+      const text = document.createElement("p");
+      text.className = "msg-text";
+      text.textContent = message.text || "";
+
+      card.appendChild(head);
+      card.appendChild(text);
+
+      if (!isSelf && message.from) {
+        const actions = document.createElement("div");
+        actions.className = "msg-actions";
+
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "msg-action";
+        btn.dataset.openPrivate = "1";
+        btn.dataset.uid = message.from;
+        btn.dataset.name = message.fromName || "مستخدم";
+        btn.dataset.photo = message.fromPhotoURL || "";
+        btn.title = "رسالة خاصة";
+
+        const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        icon.setAttribute("class", "icon");
+        const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+        use.setAttribute("href", "#i-message");
+        icon.appendChild(use);
+        btn.appendChild(icon);
+
+        actions.appendChild(btn);
+        card.appendChild(actions);
+      }
+
+      return card;
+    }
+
+    function renderOnlineList() {
+      const users = visibleOnlineUsers();
+      els.onlineCountBadge.textContent = String(users.length);
+      els.onlineList.innerHTML = "";
+
+      if (!users.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty-state";
+        empty.textContent = state.onlineSearch ? "لا يوجد نتائج." : "لا يوجد متصلون الآن.";
+        els.onlineList.appendChild(empty);
+        return;
+      }
+
+      users.forEach(user => {
+        const selected = state.selectedPrivateUser && state.selectedPrivateUser.uid === user.uid;
+        const isSelf = user.uid === state.me.uid;
+
+        const row = document.createElement("article");
+        row.className = `user-row${selected ? " selected" : ""}`;
+        row.dataset.uid = user.uid;
+        row.dataset.name = user.name;
+        row.dataset.photo = user.photoURL || "";
+
+        const main = document.createElement("button");
+        main.type = "button";
+        main.className = "user-main";
+        main.setAttribute("aria-label", `فتح ${user.name}`);
+
+        const avatar = document.createElement("div");
+        avatar.className = "avatar";
+        if (user.photoURL) {
+          avatar.classList.add("photo");
+          avatar.style.backgroundImage = `url("${user.photoURL}")`;
+          avatar.textContent = "";
+        } else {
+          avatar.textContent = initials(user.name);
+        }
+
+        const copy = document.createElement("div");
+        copy.className = "user-copy";
+
+        const strong = document.createElement("strong");
+        strong.textContent = user.name;
+
+        if (isSelf) {
+          const chip = document.createElement("span");
+          chip.className = "self-chip";
+          chip.textContent = "أنت";
+          strong.appendChild(chip);
+        }
+
+        const sub = document.createElement("span");
+        sub.textContent = isSelf ? "هذا حسابك" : formatRelative(user.lastSeen);
+
+        copy.appendChild(strong);
+        copy.appendChild(sub);
+
+        main.appendChild(avatar);
+        main.appendChild(copy);
+
+        row.appendChild(main);
+
+        if (!isSelf) {
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "tiny-btn";
+          btn.dataset.openPrivate = "1";
+          btn.dataset.uid = user.uid;
+          btn.dataset.name = user.name;
+          btn.dataset.photo = user.photoURL || "";
+          btn.title = "رسالة خاصة";
+
+          const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+          icon.setAttribute("class", "icon");
+          const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+          use.setAttribute("href", "#i-message");
+          icon.appendChild(use);
+          btn.appendChild(icon);
+
+          row.appendChild(btn);
+        }
+
+        els.onlineList.appendChild(row);
+      });
+    }
+
+    function renderPublicMessages() {
+      const list = [...state.publicMessages].sort((a, b) => (a.clientTime || 0) - (b.clientTime || 0));
+      els.publicMessages.innerHTML = "";
+
+      if (!list.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty-state centered";
+        empty.textContent = "اكتب أول رسالة.";
+        els.publicMessages.appendChild(empty);
+        return;
+      }
+
+      list.forEach(msg => {
+        els.publicMessages.appendChild(createMessageCard(msg, state.me.uid));
+      });
+
+      els.publicMessages.scrollTop = els.publicMessages.scrollHeight;
+    }
+
+    function renderPrivateHeader() {
+      const user = state.selectedPrivateUser;
+      if (!user) {
+        els.privateTitle.textContent = "محادثة خاصة";
+        els.privateSubtitle.textContent = "اختر متصلًا لبدء المحادثة.";
+        els.privateAvatar.textContent = "P";
+        els.privateAvatar.classList.remove("photo");
+        els.privateAvatar.style.backgroundImage = "";
+        els.privateInput.disabled = true;
+        els.privateInput.placeholder = "اكتب رسالة خاصة...";
+        return;
+      }
+
+      els.privateTitle.textContent = user.name;
+      els.privateSubtitle.textContent = isOnline(user) ? "متصل الآن" : "جاهز للمحادثة";
+
+      if (user.photoURL) {
+        els.privateAvatar.classList.add("photo");
+        els.privateAvatar.style.backgroundImage = `url("${user.photoURL}")`;
+        els.privateAvatar.textContent = "";
+      } else {
+        els.privateAvatar.classList.remove("photo");
+        els.privateAvatar.style.backgroundImage = "";
+        els.privateAvatar.textContent = initials(user.name);
+      }
+
+      els.privateInput.disabled = false;
+      els.privateInput.placeholder = `اكتب رسالة خاصة إلى ${user.name}...`;
+    }
+
+    function renderPrivateMessages() {
+      const user = state.selectedPrivateUser;
+      els.privateMessages.innerHTML = "";
+
+      if (!user) {
+        const empty = document.createElement("div");
+        empty.className = "empty-state centered";
+        empty.textContent = "اختر متصلًا لفتح محادثة خاصة.";
+        els.privateMessages.appendChild(empty);
+        return;
+      }
+
+      const thread = ensurePrivateThread();
+      if (!thread.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty-state centered";
+        empty.textContent = "ابدأ المحادثة الآن.";
+        els.privateMessages.appendChild(empty);
+        return;
+      }
+
+      thread.forEach(msg => {
+        els.privateMessages.appendChild(createMessageCard(msg, state.me.uid));
+      });
+
+      els.privateMessages.scrollTop = els.privateMessages.scrollHeight;
+    }
+
+    function selectPrivateUser(user) {
+      if (!user || !user.uid) return;
+      if (user.uid === state.me.uid) return;
+
+      state.selectedPrivateUser = {
+        uid: user.uid,
+        name: user.name || "مستخدم",
+        photoURL: user.photoURL || "",
+        lastSeen: user.lastSeen || Date.now()
+      };
+
+      renderPrivateHeader();
+      renderPrivateMessages();
+      openPrivateDrawer();
+    }
+
+    function addPublicMessage(text) {
+      const clean = String(text || "").trim();
+      if (!clean) return;
+
+      state.publicMessages.push({
+        id: `m-${Date.now()}`,
+        from: state.me.uid,
+        fromName: state.me.name,
+        fromPhotoURL: state.me.photoURL,
+        text: clean,
+        clientTime: Date.now()
+      });
+
+      renderPublicMessages();
+    }
+
+    function addPrivateMessage(text) {
+      const user = state.selectedPrivateUser;
+      if (!user) return;
+
+      const clean = String(text || "").trim();
+      if (!clean) return;
+
+      const threadId = getThreadId(state.me.uid, user.uid);
+      if (!state.privateMessages[threadId]) state.privateMessages[threadId] = [];
+
+      state.privateMessages[threadId].push({
+        id: `p-${Date.now()}`,
+        threadId,
+        from: state.me.uid,
+        fromName: state.me.name,
+        fromPhotoURL: state.me.photoURL,
+        to: user.uid,
+        toName: user.name,
+        text: clean,
+        clientTime: Date.now()
+      });
+
+      renderPrivateMessages();
+    }
+
+    function init() {
+      els.sidebar = document.getElementById("sidebar");
+      els.openSidebarBtn = document.getElementById("openSidebarBtn");
+      els.closeSidebarBtn = document.getElementById("closeSidebarBtn");
+      els.chatTitleBtn = document.getElementById("chatTitleBtn");
+      els.authBtn = document.getElementById("authBtn");
+      els.onlineSearchInput = document.getElementById("onlineSearchInput");
+      els.onlineCountBadge = document.getElementById("onlineCountBadge");
+      els.onlineList = document.getElementById("onlineList");
+      els.publicMessages = document.getElementById("publicMessages");
+      els.publicForm = document.getElementById("publicForm");
+      els.publicInput = document.getElementById("publicInput");
+      els.privateDrawer = document.getElementById("privateDrawer");
+      els.privateMessages = document.getElementById("privateMessages");
+      els.privateForm = document.getElementById("privateForm");
+      els.privateInput = document.getElementById("privateInput");
+      els.privateTitle = document.getElementById("privateTitle");
+      els.privateSubtitle = document.getElementById("privateSubtitle");
+      els.privateAvatar = document.getElementById("privateAvatar");
+      els.closePrivateBtn = document.getElementById("closePrivateBtn");
+      els.overlay = document.getElementById("overlay");
+
+      renderOnlineList();
+      renderPublicMessages();
+      renderPrivateHeader();
+      renderPrivateMessages();
+
+      els.openSidebarBtn.addEventListener("click", () => {
+        state.sidebarOpen = true;
+        els.sidebar.classList.add("open");
+        syncOverlay();
+      });
+
+      els.closeSidebarBtn.addEventListener("click", () => {
+        state.sidebarOpen = false;
+        els.sidebar.classList.remove("open");
+        syncOverlay();
+      });
+
+      els.chatTitleBtn.addEventListener("click", () => {
+        location.reload();
+      });
+
+      els.closePrivateBtn.addEventListener("click", closePrivateDrawer);
+
+      els.overlay.addEventListener("click", () => {
+        closeSidebar();
+        closePrivateDrawer();
+      });
+
+      els.onlineSearchInput.addEventListener("input", () => {
+        state.onlineSearch = els.onlineSearchInput.value.trim();
+        renderOnlineList();
+      });
+
+      els.onlineList.addEventListener("click", (event) => {
+        const row = event.target.closest(".user-row");
+        if (!row) return;
+
+        const target = {
+          uid: row.dataset.uid,
+          name: row.dataset.name,
+          photoURL: row.dataset.photo || "",
+          lastSeen: Date.now()
+        };
+
+        if (target.uid === state.me.uid) return;
+        selectPrivateUser(target);
+        closeSidebar();
+      });
+
+      els.publicMessages.addEventListener("click", (event) => {
+        const btn = event.target.closest("[data-open-private]");
+        if (!btn) return;
+
+        selectPrivateUser({
+          uid: btn.dataset.uid,
+          name: btn.dataset.name,
+          photoURL: btn.dataset.photo || "",
+          lastSeen: Date.now()
+        });
+      });
+
+      els.publicForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const text = els.publicInput.value;
+        if (!text.trim()) return;
+        els.publicInput.value = "";
+        addPublicMessage(text);
+      });
+
+      els.privateForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const text = els.privateInput.value;
+        if (!text.trim()) return;
+        els.privateInput.value = "";
+        addPrivateMessage(text);
+      });
+
+      window.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          closeSidebar();
+          closePrivateDrawer();
+        }
+      });
+    }
+
+    init();
+  </script>
 </body>
 </html>
