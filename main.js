@@ -1,498 +1,646 @@
-const STORAGE_KEY_PUBLIC = "kareem3_public_messages_v1";
-const STORAGE_KEY_PRIVATE = "kareem3_private_messages_v1";
-const STORAGE_KEY_TAB = "kareem3_active_tab_v1";
-const STORAGE_KEY_CHANNEL = "kareem3_active_channel_v1";
+import {
+  authReady,
+  getCurrentUser,
+  getCurrentProfile,
+  onAuthChange,
+  loginWithGoogle,
+  logoutUser,
+  listenPublicMessages,
+  sendPublicMessage,
+  listenPresence,
+  listenPrivateMessages,
+  sendPrivateMessage,
+} from "./firebase.js";
 
-const CHANNELS = {
-  public: "public",
-  private: "private"
-};
-
-const ui = {
-  sidebar: document.getElementById("sidebar"),
-  overlay: document.getElementById("overlay"),
-  openSidebarBtn: document.getElementById("openSidebarBtn"),
-  closeSidebarBtn: document.getElementById("closeSidebarBtn"),
-  scrollTopBtn: document.getElementById("scrollTopBtn"),
-  privateMessagesBtn: document.getElementById("privateMessagesBtn"),
-  chatTitleBtn: document.getElementById("chatTitleBtn"),
-  goToChatBtn: document.getElementById("goToChatBtn"),
-  goToSearchBtn: document.getElementById("goToSearchBtn"),
-  goToToolsBtn: document.getElementById("goToToolsBtn"),
-  privateRoomBtn: document.getElementById("privateRoomBtn"),
-  chatShell: document.getElementById("chatShell"),
-  msgForm: document.getElementById("msgForm"),
-  msgInput: document.getElementById("msgInput"),
-  messagesBox: document.getElementById("messages"),
-  searchInput: document.getElementById("searchInput"),
-  searchResults: document.getElementById("searchResults"),
-  searchCountBadge: document.getElementById("searchCountBadge"),
-  totalCountText: document.getElementById("totalCountText"),
-  publicCountText: document.getElementById("publicCountText"),
-  privateCountText: document.getElementById("privateCountText"),
-  statMessages: document.getElementById("statMessages"),
-  statPrivate: document.getElementById("statPrivate"),
-  clearBtn: document.getElementById("clearBtn"),
-  copyLastBtn: document.getElementById("copyLastBtn"),
-  statusBadge: document.getElementById("statusBadge"),
-  connectionBadge: document.getElementById("connectionBadge"),
-  storageModeText: document.getElementById("storageModeText"),
-  channelTitle: document.getElementById("channelTitle"),
-  channelSubtitle: document.getElementById("channelSubtitle"),
-  chatName: document.getElementById("chatName"),
-  chatDescription: document.getElementById("chatDescription"),
-  chatAvatar: document.getElementById("chatAvatar"),
-  activeChannelBadge: document.getElementById("activeChannelBadge"),
-  publicPreviewText: document.getElementById("publicPreviewText"),
-  privatePreviewText: document.getElementById("privatePreviewText"),
-  navButtons: [...document.querySelectorAll(".tab-btn")],
-  panels: {
-    chat: document.getElementById("panel-chat"),
-    private: document.getElementById("panel-private"),
-    search: document.getElementById("panel-search"),
-    tools: document.getElementById("panel-tools")
-  }
-};
-
-const externalDB = window.KAREEM3_DB || null;
+const els = {};
 
 const state = {
-  activeTab: loadText(STORAGE_KEY_TAB, "chat"),
-  activeChannel: loadText(STORAGE_KEY_CHANNEL, CHANNELS.public),
-  query: "",
-  publicMessages: loadMessages(STORAGE_KEY_PUBLIC),
-  privateMessages: loadMessages(STORAGE_KEY_PRIVATE)
+  currentUser: null,
+  currentProfile: null,
+  publicMessages: [],
+  presence: [],
+  selectedPrivateUser: null,
+  privateMessages: [],
+  onlineSearch: "",
+  publicUnsub: null,
+  presenceUnsub: null,
+  privateUnsub: null,
+  sidebarOpen: false,
+  privateOpen: false,
 };
 
-function loadText(key, fallback) {
+const ONLINE_TTL = 90_000;
+const MAX_PUBLIC_MESSAGES = 70;
+
+function $(id) {
+  return document.getElementById(id);
+}
+
+function normalizeName(name, uid, fallbackPrefix = "طيف") {
+  const clean = String(name || "").trim();
+  if (clean) return clean;
+  return `${fallbackPrefix} ${String(uid || "").slice(-4).toUpperCase()}`;
+}
+
+function initialsFromName(name) {
+  const clean = String(name || "").trim();
+  if (!clean) return "؟";
+  return clean.slice(0, 1).toUpperCase();
+}
+
+function timeValue(item) {
+  if (!item) return 0;
+  if (typeof item.sortTime === "number") return item.sortTime;
+  if (typeof item.clientTime === "number") return item.clientTime;
+  if (typeof item.lastSeen === "number") return item.lastSeen;
+  const createdAt = item.createdAt;
+  if (typeof createdAt === "number") return createdAt;
+  if (createdAt && typeof createdAt.seconds === "number") return createdAt.seconds * 1000;
+  return 0;
+}
+
+function formatClock(value) {
+  const ms = typeof value === "number" ? value : timeValue(value);
+  if (!ms) return "";
   try {
-    const value = localStorage.getItem(key);
-    return value || fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function saveText(key, value) {
-  try {
-    localStorage.setItem(key, value);
-  } catch {}
-}
-
-function cryptoSafeId() {
-  if (window.crypto && typeof window.crypto.randomUUID === "function") {
-    return window.crypto.randomUUID();
-  }
-  return `m_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-}
-
-function nowTime() {
-  return Date.now();
-}
-
-function formatTime(value) {
-  try {
-    return new Date(value).toLocaleTimeString("ar", {
+    return new Intl.DateTimeFormat("ar-EG", {
       hour: "2-digit",
-      minute: "2-digit"
-    });
+      minute: "2-digit",
+    }).format(new Date(ms));
   } catch {
     return "";
   }
 }
 
-function escapeHtml(text = "") {
-  return String(text)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+function formatRelative(ms) {
+  const diff = Date.now() - ms;
+  if (diff < 10_000) return "الآن";
+  if (diff < 60_000) return "منذ قليل";
+  if (diff < 60 * 60_000) return `منذ ${Math.max(1, Math.round(diff / 60_000))} د`;
+  return `منذ ${Math.max(1, Math.round(diff / 3_600_000))} س`;
 }
 
-function normalizeMessage(message = {}) {
-  const ts = Number(message.ts ?? nowTime());
-  return {
-    id: message.id || cryptoSafeId(),
-    author: String(message.author || "أنت"),
-    text: String(message.text || ""),
-    time: String(message.time || formatTime(ts)),
-    ts: Number.isFinite(ts) ? ts : nowTime(),
-    mine: Boolean(message.mine ?? true)
-  };
+function ensureElements() {
+  els.sidebar = $("sidebar");
+  els.openSidebarBtn = $("openSidebarBtn");
+  els.closeSidebarBtn = $("closeSidebarBtn");
+  els.chatTitleBtn = $("chatTitleBtn");
+  els.authBtn = $("authBtn");
+  els.onlineSearchInput = $("onlineSearchInput");
+  els.onlineList = $("onlineList");
+  els.publicMessages = $("publicMessages");
+  els.publicForm = $("publicForm");
+  els.publicInput = $("publicInput");
+  els.overlay = $("overlay");
+  els.connectionPill = $("connectionPill");
+
+  els.privateDrawer = $("privateDrawer");
+  els.closePrivateBtn = $("closePrivateBtn");
+  els.privateTitle = $("privateTitle");
+  els.privateSubtitle = $("privateSubtitle");
+  els.privateAvatar = $("privateAvatar");
+  els.privateMessages = $("privateMessages");
+  els.privateForm = $("privateForm");
+  els.privateInput = $("privateInput");
 }
 
-function loadMessages(key) {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return parsed.map(normalizeMessage);
-  } catch {
-    return [];
-  }
+function setConnectionState(type, text) {
+  if (!els.connectionPill) return;
+  els.connectionPill.classList.remove("connected", "waiting", "error");
+  if (type) els.connectionPill.classList.add(type);
+  els.connectionPill.textContent = text;
 }
 
-function saveMessages(key, messages) {
-  try {
-    localStorage.setItem(key, JSON.stringify(messages));
-  } catch {}
-}
-
-function getMessages(channel = state.activeChannel) {
-  return channel === CHANNELS.private ? state.privateMessages : state.publicMessages;
-}
-
-function setMessages(channel, messages) {
-  if (channel === CHANNELS.private) {
-    state.privateMessages = messages.map(normalizeMessage);
-    saveMessages(STORAGE_KEY_PRIVATE, state.privateMessages);
-  } else {
-    state.publicMessages = messages.map(normalizeMessage);
-    saveMessages(STORAGE_KEY_PUBLIC, state.publicMessages);
-  }
-}
-
-function setMode(mode) {
-  const map = {
-    local: {
-      badge: "محلي",
-      text: "يعمل محليًا الآن، ومجهز للربط لاحقًا."
-    },
-    "db-ready": {
-      badge: "جاهز",
-      text: "ملف الربط الخارجي جاهز للتركيب لاحقًا."
-    },
-    live: {
-      badge: "متصل",
-      text: "متصل بقاعدة البيانات ويزامن الرسائل مباشرة."
-    }
-  };
-
-  const info = map[mode] || map.local;
-  ui.statusBadge.textContent = info.badge;
-  ui.connectionBadge.textContent = info.badge;
-  ui.storageModeText.textContent = info.badge;
-  ui.channelSubtitle.textContent = info.text;
-}
-
-function channelMeta(channel) {
-  if (channel === CHANNELS.private) {
-    return {
-      title: "الرسائل الخاصة",
-      subtitle: "محادثة خاصة ومنظمة ومقفولة على أصحابها.",
-      badge: "خاص",
-      avatar: "P",
-      chatName: "الرسائل الخاصة",
-      chatDescription: "اكتب رسالة خاصة هنا.",
-      empty: "لا توجد رسائل خاصة بعد."
-    };
-  }
-
-  return {
-    title: "الشات العام",
-    subtitle: "تصميم نظيف بلون زهري غامق وموڨ، ومساحة رسائل واضحة.",
-    badge: "عام",
-    avatar: "🔥",
-    chatName: "الشات العام",
-    chatDescription: "اكتب أول رسالة من الأسفل.",
-    empty: "اكتب أول رسالة من الأسفل."
-  };
-}
-
-function filteredMessages() {
-  const q = state.query.trim().toLowerCase();
-  const items = [...getMessages()].sort((a, b) => a.ts - b.ts);
-
-  if (!q) return items;
-
-  return items.filter((m) => {
-    const hay = `${m.author} ${m.text} ${m.time}`.toLowerCase();
-    return hay.includes(q);
-  });
-}
-
-function updateCounts() {
-  const publicCount = state.publicMessages.length;
-  const privateCount = state.privateMessages.length;
-  const total = publicCount + privateCount;
-
-  ui.totalCountText.textContent = String(total);
-  ui.publicCountText.textContent = String(publicCount);
-  ui.privateCountText.textContent = String(privateCount);
-  ui.statMessages.textContent = String(total);
-  ui.statPrivate.textContent = String(privateCount);
-}
-
-function renderSearchResults() {
-  const q = state.query.trim().toLowerCase();
-  const source = [...state.publicMessages, ...state.privateMessages];
-  const results = q
-    ? source.filter((m) => `${m.author} ${m.text} ${m.time}`.toLowerCase().includes(q))
-    : [];
-
-  ui.searchCountBadge.textContent = String(results.length);
-
-  if (!q) {
-    ui.searchResults.innerHTML = `<div class="empty-state">اكتب في البحث.</div>`;
-    return;
-  }
-
-  if (!results.length) {
-    ui.searchResults.innerHTML = `<div class="empty-state">لا توجد نتائج.</div>`;
-    return;
-  }
-
-  ui.searchResults.innerHTML = results.slice().reverse().map((m) => `
-    <div class="tool-row">
-      <div>
-        <strong>${escapeHtml(m.author)}</strong>
-        <span>${escapeHtml(m.text)}</span>
-      </div>
-      <span class="badge-chip">${escapeHtml(m.time)}</span>
-    </div>
-  `).join("");
-}
-
-function renderMessages() {
-  const messages = filteredMessages();
-  const meta = channelMeta(state.activeChannel);
-
-  ui.channelTitle.textContent = meta.title;
-  ui.channelSubtitle.textContent = meta.subtitle;
-  ui.chatName.textContent = meta.chatName;
-  ui.chatDescription.textContent = meta.chatDescription;
-  ui.chatAvatar.textContent = meta.avatar;
-  ui.activeChannelBadge.textContent = meta.badge;
-  ui.msgInput.placeholder = state.activeChannel === CHANNELS.private ? "اكتب رسالة خاصة..." : "اكتب رسالة...";
-
-  ui.messagesBox.innerHTML = "";
-
-  if (!messages.length) {
-    ui.messagesBox.innerHTML = `<div class="empty-state centered">${escapeHtml(meta.empty)}</div>`;
-  } else {
-    for (const message of messages) {
-      const div = document.createElement("div");
-      div.className = `msg${message.mine ? " me" : ""}`;
-      div.innerHTML = `
-        <div class="author">${escapeHtml(message.author)}</div>
-        <small>${escapeHtml(message.time)}</small>
-        <div>${escapeHtml(message.text)}</div>
-      `;
-      ui.messagesBox.appendChild(div);
-    }
-  }
-
-  ui.messagesBox.scrollTop = ui.messagesBox.scrollHeight;
-  updateCounts();
-  renderSearchResults();
-
-  if (window.lucide?.createIcons) {
-    window.lucide.createIcons();
-  }
-}
-
-function setTab(tabName) {
-  state.activeTab = tabName;
-  saveText(STORAGE_KEY_TAB, tabName);
-
-  Object.entries(ui.panels).forEach(([name, panel]) => {
-    panel.classList.toggle("active", name === tabName);
-  });
-
-  ui.navButtons.forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.tab === tabName);
-  });
-
-  if (tabName === "private") {
-    switchChannel(CHANNELS.private);
-  }
-}
-
-function switchChannel(channel) {
-  state.activeChannel = channel;
-  saveText(STORAGE_KEY_CHANNEL, channel);
-  ui.activeChannelBadge.textContent = channel === CHANNELS.private ? "خاص" : "عام";
-
-  if (channel === CHANNELS.private) {
-    setTab("private");
-  } else if (state.activeTab === "private") {
-    setTab("chat");
-  }
-
-  renderMessages();
+function syncOverlay() {
+  const show = state.sidebarOpen || state.privateOpen;
+  els.overlay.classList.toggle("show", show);
 }
 
 function openSidebar() {
-  ui.sidebar.classList.add("open");
-  ui.overlay.classList.add("show");
+  state.sidebarOpen = true;
+  els.sidebar.classList.add("open");
+  syncOverlay();
 }
 
 function closeSidebar() {
-  ui.sidebar.classList.remove("open");
-  ui.overlay.classList.remove("show");
+  state.sidebarOpen = false;
+  els.sidebar.classList.remove("open");
+  syncOverlay();
 }
 
-function scrollToChat() {
-  ui.chatShell.scrollIntoView({ behavior: "smooth", block: "start" });
+function openPrivateDrawer() {
+  state.privateOpen = true;
+  els.privateDrawer.classList.add("open");
+  syncOverlay();
 }
 
-async function sendMessage(text) {
-  const cleanText = String(text || "").trim();
-  if (!cleanText) return;
+function closePrivateDrawer() {
+  state.privateOpen = false;
+  els.privateDrawer.classList.remove("open");
+  syncOverlay();
+}
 
-  const message = normalizeMessage({
-    author: "أنت",
-    text: cleanText,
-    mine: true
+function setPrivateUser(user) {
+  if (!user || !user.uid) return;
+  if (state.currentUser && user.uid === state.currentUser.uid) return;
+
+  state.selectedPrivateUser = {
+    uid: user.uid,
+    name: normalizeName(user.name || user.displayName, user.uid),
+    photoURL: user.photoURL || "",
+    lastSeen: user.lastSeen || 0,
+  };
+
+  renderPrivateHeader();
+  subscribePrivateMessages();
+  renderPrivateMessages();
+  openPrivateDrawer();
+}
+
+function renderPrivateHeader() {
+  const user = state.selectedPrivateUser;
+  if (!user) {
+    els.privateTitle.textContent = "محادثة خاصة";
+    els.privateSubtitle.textContent = "اختر متصلًا لبدء المحادثة.";
+    els.privateAvatar.textContent = "P";
+    els.privateAvatar.classList.remove("photo");
+    els.privateAvatar.style.backgroundImage = "";
+    els.privateInput.placeholder = "اكتب رسالة خاصة...";
+    els.privateInput.disabled = true;
+    return;
+  }
+
+  els.privateTitle.textContent = user.name;
+  els.privateSubtitle.textContent =
+    user.lastSeen && Date.now() - user.lastSeen <= ONLINE_TTL
+      ? "متصل الآن"
+      : "جاهز للمحادثة";
+  els.privateAvatar.textContent = initialsFromName(user.name);
+  if (user.photoURL) {
+    els.privateAvatar.classList.add("photo");
+    els.privateAvatar.style.backgroundImage = `url("${user.photoURL}")`;
+    els.privateAvatar.textContent = "";
+  } else {
+    els.privateAvatar.classList.remove("photo");
+    els.privateAvatar.style.backgroundImage = "";
+  }
+
+  els.privateInput.placeholder = `اكتب رسالة خاصة إلى ${user.name}...`;
+  els.privateInput.disabled = false;
+}
+
+function subscribePublicMessages() {
+  if (state.publicUnsub) state.publicUnsub();
+
+  state.publicUnsub = listenPublicMessages((messages) => {
+    state.publicMessages = Array.isArray(messages) ? messages : [];
+    renderPublicMessages();
+  });
+}
+
+function subscribePresence() {
+  if (state.presenceUnsub) state.presenceUnsub();
+
+  state.presenceUnsub = listenPresence((users) => {
+    state.presence = Array.isArray(users) ? users : [];
+    renderOnlineUsers();
+  });
+}
+
+function subscribePrivateMessages() {
+  if (state.privateUnsub) state.privateUnsub();
+  state.privateMessages = [];
+
+  if (!state.selectedPrivateUser || !state.currentUser) {
+    renderPrivateMessages();
+    return;
+  }
+
+  state.privateUnsub = listenPrivateMessages(state.selectedPrivateUser.uid, (messages) => {
+    state.privateMessages = Array.isArray(messages) ? messages : [];
+    renderPrivateMessages();
+  });
+}
+
+function sortedVisibleOnlineUsers() {
+  const search = state.onlineSearch.trim().toLowerCase();
+
+  return [...state.presence]
+    .filter((item) => item && item.uid)
+    .filter((item) => typeof item.lastSeen === "number" && Date.now() - item.lastSeen <= ONLINE_TTL)
+    .filter((item) => {
+      if (!search) return true;
+      const name = normalizeName(item.name, item.uid).toLowerCase();
+      return name.includes(search) || String(item.uid).toLowerCase().includes(search);
+    })
+    .sort((a, b) => (b.lastSeen || 0) - (a.lastSeen || 0));
+}
+
+function renderOnlineUsers() {
+  const users = sortedVisibleOnlineUsers();
+  els.onlineList.innerHTML = "";
+
+  if (!users.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.textContent = state.onlineSearch.trim() ? "لا يوجد نتائج." : "لا يوجد متصلون الآن.";
+    els.onlineList.appendChild(empty);
+    return;
+  }
+
+  users.forEach((user) => {
+    const name = normalizeName(user.name, user.uid);
+    const isSelf = state.currentUser && user.uid === state.currentUser.uid;
+    const selected = state.selectedPrivateUser && state.selectedPrivateUser.uid === user.uid;
+
+    const row = document.createElement("article");
+    row.className = `user-row${selected ? " selected" : ""}`;
+    row.dataset.uid = user.uid;
+    row.dataset.name = name;
+    row.dataset.photo = user.photoURL || "";
+
+    const main = document.createElement("button");
+    main.type = "button";
+    main.className = "user-main";
+    main.setAttribute("aria-label", `فتح ${name}`);
+
+    const avatar = document.createElement("div");
+    avatar.className = "avatar";
+    if (user.photoURL) {
+      avatar.classList.add("photo");
+      avatar.style.backgroundImage = `url("${user.photoURL}")`;
+      avatar.textContent = "";
+    } else {
+      avatar.textContent = initialsFromName(name);
+    }
+
+    const copy = document.createElement("div");
+    copy.className = "user-copy";
+
+    const strong = document.createElement("strong");
+    strong.textContent = name;
+
+    if (isSelf) {
+      const chip = document.createElement("span");
+      chip.className = "self-chip";
+      chip.textContent = "أنت";
+      strong.appendChild(chip);
+    }
+
+    const sub = document.createElement("span");
+    sub.textContent = isSelf ? "هذا حسابك" : formatRelative(user.lastSeen || Date.now());
+
+    copy.appendChild(strong);
+    copy.appendChild(sub);
+
+    main.appendChild(avatar);
+    main.appendChild(copy);
+
+    row.appendChild(main);
+
+    if (!isSelf) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "tiny-btn";
+      btn.dataset.openPrivate = "1";
+      btn.setAttribute("aria-label", `رسالة خاصة إلى ${name}`);
+      btn.title = "رسالة خاصة";
+
+      const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      icon.setAttribute("class", "icon");
+      const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+      use.setAttribute("href", "#i-message");
+      icon.appendChild(use);
+      btn.appendChild(icon);
+
+      row.appendChild(btn);
+    }
+
+    els.onlineList.appendChild(row);
+  });
+}
+
+function createMiniAvatar(userName, photoURL) {
+  const mini = document.createElement("div");
+  mini.className = "mini-avatar";
+
+  if (photoURL) {
+    mini.classList.add("photo");
+    mini.style.backgroundImage = `url("${photoURL}")`;
+    mini.textContent = "";
+  } else {
+    mini.textContent = initialsFromName(userName);
+  }
+
+  return mini;
+}
+
+function createMessageCard(message, type = "public") {
+  const uid = message.from || "";
+  const currentUid = state.currentUser?.uid || "";
+  const isSelf = uid && uid === currentUid;
+
+  const name =
+    normalizeName(message.fromName || message.senderName, uid || "0000", isSelf ? "أنت" : "طيف");
+
+  const time = formatClock(message.clientTime || message.sortTime || timeValue(message));
+
+  const card = document.createElement("article");
+  card.className = `msg${isSelf ? " self" : ""}`;
+
+  const head = document.createElement("div");
+  head.className = "msg-head";
+
+  const meta = document.createElement("div");
+  meta.className = "msg-meta";
+
+  const mini = createMiniAvatar(name, message.fromPhotoURL || message.senderPhotoURL || "");
+  const label = document.createElement("div");
+  label.className = "name";
+  label.textContent = isSelf ? "أنت" : name;
+
+  meta.appendChild(mini);
+  meta.appendChild(label);
+
+  const metaWrap = document.createElement("div");
+  metaWrap.className = "msg-meta";
+  metaWrap.appendChild(meta);
+
+  const clock = document.createElement("div");
+  clock.className = "msg-time";
+  clock.textContent = time;
+
+  head.appendChild(metaWrap);
+  head.appendChild(clock);
+
+  const text = document.createElement("p");
+  text.className = "msg-text";
+  text.textContent = message.text || "";
+
+  card.appendChild(head);
+  card.appendChild(text);
+
+  if (type === "public" && uid && !isSelf) {
+    const actions = document.createElement("div");
+    actions.className = "msg-actions";
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "msg-action";
+    btn.dataset.openPrivate = "1";
+    btn.dataset.uid = uid;
+    btn.dataset.name = name;
+    btn.dataset.photo = message.fromPhotoURL || "";
+    btn.title = "رسالة خاصة";
+    btn.setAttribute("aria-label", `رسالة خاصة إلى ${name}`);
+
+    const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    icon.setAttribute("class", "icon");
+    const use = document.createElementNS("http://www.w3.org/2000/svg", "use");
+    use.setAttribute("href", "#i-message");
+    icon.appendChild(use);
+    btn.appendChild(icon);
+
+    actions.appendChild(btn);
+    card.appendChild(actions);
+  }
+
+  return card;
+}
+
+function renderPublicMessages() {
+  const list = [...state.publicMessages]
+    .sort((a, b) => timeValue(a) - timeValue(b))
+    .slice(-MAX_PUBLIC_MESSAGES);
+
+  els.publicMessages.innerHTML = "";
+
+  if (!list.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state centered";
+    empty.textContent = "اكتب أول رسالة.";
+    els.publicMessages.appendChild(empty);
+    return;
+  }
+
+  list.forEach((message) => {
+    els.publicMessages.appendChild(createMessageCard(message, "public"));
   });
 
-  const channel = state.activeChannel;
+  scrollToBottom(els.publicMessages);
+}
 
-  if (externalDB && typeof externalDB.sendMessage === "function") {
-    await externalDB.sendMessage(channel, message);
+function renderPrivateMessages() {
+  const user = state.selectedPrivateUser;
+  const currentUid = state.currentUser?.uid || "";
+
+  if (!user) {
+    els.privateMessages.innerHTML = "";
+    const empty = document.createElement("div");
+    empty.className = "empty-state centered";
+    empty.textContent = "اختر متصلًا لفتح محادثة خاصة.";
+    els.privateMessages.appendChild(empty);
+    els.privateInput.disabled = true;
     return;
   }
 
-  const messages = [...getMessages(channel), message];
-  setMessages(channel, messages);
-  renderMessages();
-}
+  const threadId = [currentUid, user.uid].sort().join("__");
+  const list = [...state.privateMessages]
+    .filter((item) => item.threadId === threadId || !item.threadId)
+    .sort((a, b) => timeValue(a) - timeValue(b));
 
-async function clearMessages() {
-  const ok = confirm("مسح كل الرسائل في القسم الحالي؟");
-  if (!ok) return;
+  els.privateMessages.innerHTML = "";
 
-  const channel = state.activeChannel;
-
-  if (externalDB && typeof externalDB.clearMessages === "function") {
-    await externalDB.clearMessages(channel);
+  if (!list.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state centered";
+    empty.textContent = "ابدأ المحادثة الآن.";
+    els.privateMessages.appendChild(empty);
+    scrollToBottom(els.privateMessages);
     return;
   }
 
-  setMessages(channel, []);
-  renderMessages();
+  list.forEach((message) => {
+    els.privateMessages.appendChild(createMessageCard(message, "private"));
+  });
+
+  scrollToBottom(els.privateMessages);
 }
 
-async function copyLastMessage() {
-  const last = [...getMessages()].slice(-1)[0];
-  if (!last) return;
+function scrollToBottom(container) {
+  requestAnimationFrame(() => {
+    container.scrollTop = container.scrollHeight;
+  });
+}
 
+async function handlePublicSubmit(event) {
+  event.preventDefault();
+
+  const text = els.publicInput.value.trim();
+  if (!text) return;
+
+  els.publicInput.value = "";
   try {
-    await navigator.clipboard.writeText(last.text);
-  } catch {
-    const temp = document.createElement("textarea");
-    temp.value = last.text;
-    document.body.appendChild(temp);
-    temp.select();
-    document.execCommand("copy");
-    temp.remove();
+    await sendPublicMessage(text);
+    els.publicInput.focus();
+  } catch (error) {
+    console.error(error);
+    setConnectionState("error", "خطأ");
   }
 }
 
-function applyExternalSnapshot(channel, messages = [], mode = "live") {
-  setMessages(channel, Array.isArray(messages) ? messages : []);
-  setMode(mode);
-  renderMessages();
+async function handlePrivateSubmit(event) {
+  event.preventDefault();
+
+  const text = els.privateInput.value.trim();
+  const partner = state.selectedPrivateUser;
+
+  if (!text || !partner) return;
+
+  els.privateInput.value = "";
+  try {
+    await sendPrivateMessage(partner.uid, partner.name, partner.photoURL, text);
+    els.privateInput.focus();
+  } catch (error) {
+    console.error(error);
+    setConnectionState("error", "خطأ");
+  }
 }
 
-function bindEvents() {
-  ui.openSidebarBtn?.addEventListener("click", openSidebar);
-  ui.closeSidebarBtn?.addEventListener("click", closeSidebar);
-  ui.overlay?.addEventListener("click", closeSidebar);
+function handleAuthClick() {
+  const profile = getCurrentProfile();
+  const isGoogle = profile.providerId && profile.providerId !== "anonymous";
 
-  ui.scrollTopBtn?.addEventListener("click", () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  if (isGoogle) {
+    logoutUser().catch((error) => console.error("Logout error:", error));
+    return;
+  }
+
+  loginWithGoogle().catch((error) => {
+    console.error("Google login error:", error);
+  });
+}
+
+function initEvents() {
+  els.openSidebarBtn.addEventListener("click", () => {
+    state.sidebarOpen ? closeSidebar() : openSidebar();
   });
 
-  ui.privateMessagesBtn?.addEventListener("click", () => switchChannel(CHANNELS.private));
-  ui.privateRoomBtn?.addEventListener("click", () => switchChannel(CHANNELS.private));
+  els.closeSidebarBtn.addEventListener("click", closeSidebar);
+  els.closePrivateBtn.addEventListener("click", closePrivateDrawer);
 
-  ui.chatTitleBtn?.addEventListener("click", () => {
+  els.overlay.addEventListener("click", () => {
+    closeSidebar();
+    closePrivateDrawer();
+  });
+
+  els.chatTitleBtn.addEventListener("click", () => {
     window.location.reload();
   });
 
-  ui.goToChatBtn?.addEventListener("click", () => {
-    switchChannel(CHANNELS.public);
-    scrollToChat();
+  els.authBtn.addEventListener("click", handleAuthClick);
+
+  els.onlineSearchInput.addEventListener("input", () => {
+    state.onlineSearch = els.onlineSearchInput.value.trim();
+    renderOnlineUsers();
   });
 
-  ui.goToSearchBtn?.addEventListener("click", () => setTab("search"));
-  ui.goToToolsBtn?.addEventListener("click", () => setTab("tools"));
+  els.onlineList.addEventListener("click", (event) => {
+    const row = event.target.closest(".user-row");
+    if (!row) return;
 
-  ui.navButtons.forEach((btn) => {
-    btn.addEventListener("click", () => setTab(btn.dataset.tab));
-  });
+    const target = {
+      uid: row.dataset.uid,
+      name: row.dataset.name,
+      photoURL: row.dataset.photo || "",
+      lastSeen: Date.now(),
+    };
 
-  ui.searchInput?.addEventListener("input", (e) => {
-    state.query = e.target.value;
-    renderMessages();
-  });
-
-  ui.msgForm?.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const text = ui.msgInput.value.trim();
-    if (!text) return;
-
-    await sendMessage(text);
-    ui.msgInput.value = "";
-    ui.msgInput.focus();
-  });
-
-  ui.clearBtn?.addEventListener("click", async () => {
-    try {
-      await clearMessages();
-    } catch (error) {
-      console.error("Clear messages error:", error);
-      alert("تعذر مسح الرسائل الآن.");
+    const openBtn = event.target.closest("[data-open-private]");
+    if (openBtn || row) {
+      if (state.currentUser && target.uid === state.currentUser.uid) return;
+      setPrivateUser(target);
+      closeSidebar();
     }
   });
 
-  ui.copyLastBtn?.addEventListener("click", copyLastMessage);
+  els.publicMessages.addEventListener("click", (event) => {
+    const btn = event.target.closest("[data-open-private]");
+    if (!btn) return;
 
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeSidebar();
+    const target = {
+      uid: btn.dataset.uid,
+      name: btn.dataset.name,
+      photoURL: btn.dataset.photo || "",
+      lastSeen: Date.now(),
+    };
+
+    if (state.currentUser && target.uid === state.currentUser.uid) return;
+    setPrivateUser(target);
+  });
+
+  els.publicForm.addEventListener("submit", handlePublicSubmit);
+  els.privateForm.addEventListener("submit", handlePrivateSubmit);
+}
+
+function updateAuthUI() {
+  const profile = getCurrentProfile();
+  const isGoogle = profile.providerId && profile.providerId !== "anonymous";
+
+  if (isGoogle) {
+    els.authBtn.title = "الخروج من جوجل";
+    els.authBtn.setAttribute("aria-label", "الخروج من جوجل");
+    setConnectionState("connected", "متصل");
+  } else {
+    els.authBtn.title = "دخول جوجل";
+    els.authBtn.setAttribute("aria-label", "دخول جوجل");
+    setConnectionState("connected", "متصل");
+  }
+}
+
+function bootstrapListeners() {
+  onAuthChange(({ user, profile }) => {
+    state.currentUser = user;
+    state.currentProfile = profile;
+    updateAuthUI();
+
+    if (state.selectedPrivateUser) {
+      renderPrivateHeader();
+      subscribePrivateMessages();
+    }
+
+    renderOnlineUsers();
+    renderPublicMessages();
+  });
+
+  subscribePublicMessages();
+  subscribePresence();
+}
+
+function init() {
+  ensureElements();
+  initEvents();
+  updateAuthUI();
+  bootstrapListeners();
+
+  authReady.then(() => {
+    state.currentUser = getCurrentUser();
+    state.currentProfile = getCurrentProfile();
+    updateAuthUI();
+    renderOnlineUsers();
+    renderPublicMessages();
+    if (state.selectedPrivateUser) {
+      renderPrivateHeader();
+      subscribePrivateMessages();
+    }
+  }).catch((error) => {
+    console.error("Auth ready error:", error);
+    setConnectionState("error", "خطأ");
   });
 }
 
-window.KAREEM3_CHAT = {
-  getMessages: (channel = state.activeChannel) => [...getMessages(channel)],
-  setQuery: (queryText) => {
-    state.query = String(queryText || "");
-    if (ui.searchInput) ui.searchInput.value = state.query;
-    renderMessages();
-  },
-  addMessage: async (text) => sendMessage(String(text || "")),
-  clearMessages: async () => clearMessages(),
-  setMessages: (channel, messages) => applyExternalSnapshot(channel, messages, externalDB ? "live" : "db-ready"),
-  switchChannel,
-  setTab,
-  setMode
-};
-
-bindEvents();
-
-if (externalDB && typeof externalDB.subscribe === "function") {
-  setMode("db-ready");
-
-  const maybePublic = externalDB.subscribe(CHANNELS.public, (messages) => {
-    applyExternalSnapshot(CHANNELS.public, messages, "live");
-  });
-
-  const maybePrivate = externalDB.subscribe(CHANNELS.private, (messages) => {
-    applyExternalSnapshot(CHANNELS.private, messages, "live");
-  });
-
-  if (typeof maybePublic === "function" || typeof maybePrivate === "function") {
-    window.KAREEM3_CHAT.unsubscribe = () => {
-      if (typeof maybePublic === "function") maybePublic();
-      if (typeof maybePrivate === "function") maybePrivate();
-    };
-  }
-
-  renderMessages();
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
 } else {
-  setMode("local");
-  renderMessages();
+  init();
 }
