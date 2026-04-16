@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>شات نار</title>
-  <meta name="description" content="واجهة شات عربية عصرية ومنظمة، جاهزة للربط بقاعدة البيانات." />
+  <meta name="description" content="واجهة شات عربية عصرية ومنظمة، جاهزة للتوسع والربط لاحقًا." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -29,10 +29,6 @@
     <symbol id="i-message" viewBox="0 0 24 24">
       <path d="M21 12c0 4.4-4 8-9 8a10 10 0 0 1-4.2-.9L3 20l1-4A7.5 7.5 0 0 1 2 12c0-4.4 4-8 9-8s10 3.6 10 8Z" />
     </symbol>
-    <symbol id="i-lock" viewBox="0 0 24 24">
-      <rect x="4.5" y="10" width="15" height="10" rx="3" />
-      <path d="M8 10V8a4 4 0 0 1 8 0v2" />
-    </symbol>
     <symbol id="i-send" viewBox="0 0 24 24">
       <path d="M21 3L10 14" />
       <path d="M21 3l-7 18-4-8-8-4Z" />
@@ -43,7 +39,8 @@
     <aside class="sidebar" id="sidebar" aria-label="قائمة المتصلين">
       <div class="sidebar-top">
         <div class="brand">
-          <div class="brand-text">
+          <div class="brand-mark">K3</div>
+          <div class="brand-copy">
             <strong>شات نار</strong>
           </div>
         </div>
@@ -60,11 +57,10 @@
 
       <div class="section-head">
         <h2>المتصلون الآن</h2>
+        <span class="pill soft" id="onlineCountBadge">0</span>
       </div>
 
-      <div class="online-list" id="onlineList">
-        <div class="empty-state">جارٍ التحميل...</div>
-      </div>
+      <div class="online-list" id="onlineList"></div>
     </aside>
 
     <main class="main">
@@ -75,15 +71,11 @@
           </button>
         </div>
 
-        <button class="title-chip" id="chatTitleBtn" type="button" aria-label="تحديث الصفحة" title="تحديث الصفحة">
+        <button class="title-chip" id="chatTitleBtn" type="button" aria-label="تحديث" title="اضغط للتحديث">
           <span>شات نار</span>
         </button>
 
-        <div class="topbar-right">
-          <button class="icon-btn" id="authBtn" type="button" aria-label="الحساب" title="الحساب">
-            <svg class="icon"><use href="#i-user"></use></svg>
-          </button>
-        </div>
+        <div class="status-chip" id="connectionPill">محلي</div>
       </header>
 
       <section class="chat-shell">
@@ -91,12 +83,12 @@
           <div class="chat-head-left">
             <div class="chat-avatar">🔥</div>
             <div>
-              <h1>الشات العام</h1>
-              <p>اكتب رسالتك هنا.</p>
+              <h1 id="chatName">الشات العام</h1>
+              <p id="chatDescription">اكتب رسالة وابدأ التواصل.</p>
             </div>
           </div>
 
-          <div class="pill" id="connectionPill">جاهز</div>
+          <div class="pill" id="activeChannelBadge">عام</div>
         </div>
 
         <div class="messages" id="publicMessages">
@@ -104,9 +96,6 @@
         </div>
 
         <form class="composer" id="publicForm" autocomplete="off">
-          <button class="attach-btn" type="button" aria-label="إرفاق" title="إرفاق">
-            <svg class="icon"><use href="#i-lock"></use></svg>
-          </button>
           <input id="publicInput" type="text" placeholder="اكتب رسالة..." maxlength="1000" />
           <button class="send-btn" type="submit" aria-label="إرسال" title="إرسال">
             <svg class="icon"><use href="#i-send"></use></svg>
@@ -136,9 +125,6 @@
     </div>
 
     <form class="composer private-composer" id="privateForm" autocomplete="off">
-      <button class="attach-btn" type="button" aria-label="إرفاق" title="إرفاق">
-        <svg class="icon"><use href="#i-lock"></use></svg>
-      </button>
       <input id="privateInput" type="text" placeholder="اكتب رسالة خاصة..." maxlength="1000" disabled />
       <button class="send-btn" type="submit" aria-label="إرسال خاص" title="إرسال خاص">
         <svg class="icon"><use href="#i-send"></use></svg>
