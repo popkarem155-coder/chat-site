@@ -5,7 +5,9 @@ import {
   addDoc,
   onSnapshot,
   query,
-  orderBy
+  orderBy,
+  limit,
+  serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -18,24 +20,53 @@ const firebaseConfig = {
   measurementId: "G-HVNTN7FGH4"
 };
 
+/* =========================
+   INIT (safe single instance)
+========================= */
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 const messagesRef = collection(db, "public_messages");
 
-export async function sendMessage(text) {
-  await addDoc(messagesRef, {
-    text,
-    time: Date.now()
-  });
+/* =========================
+   SEND MESSAGE
+========================= */
+export async function sendMessage(text, user = "anon") {
+  try {
+    await addDoc(messagesRef, {
+      text,
+      user,
+      time: serverTimestamp()
+    });
+  } catch (err) {
+    console.error("Send message error:", err);
+  }
 }
 
+/* =========================
+   LISTEN MESSAGES (SAFE)
+   returns unsubscribe
+========================= */
 export function listenMessages(callback) {
-  const q = query(messagesRef, orderBy("time"));
+  const q = query(
+    messagesRef,
+    orderBy("time", "desc"),
+    limit(70)
+  );
 
-  onSnapshot(q, (snap) => {
+  const unsubscribe = onSnapshot(q, (snap) => {
     const msgs = [];
-    snap.forEach(d => msgs.push(d.data()));
-    callback(msgs);
+
+    snap.forEach((doc) => {
+      msgs.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    // نعكس الترتيب عشان يظهر من القديم للجديد
+    callback(msgs.reverse());
   });
+
+  return unsubscribe;
 }
