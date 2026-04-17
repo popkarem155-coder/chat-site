@@ -1849,4 +1849,66 @@
     els.profileBio = $("profileBio");
     els.closeProfileBtn = $("closeProfileBtn");
 
-    els.privateView = $("privateView
+    els.privateView = $("privateView");
+    els.backFromPrivateBtn = $("backFromPrivateBtn");
+    els.privateChatsEmpty = $("privateChatsEmpty");
+    els.privateChatsList = $("privateChatsList");
+    els.privateChatAvatar = $("privateChatAvatar");
+    els.privateChatTitle = $("privateChatTitle");
+    els.privateChatMeta = $("privateChatMeta");
+    els.privateMessages = $("privateMessages");
+    els.privateMessageForm = $("privateMessageForm");
+    els.privateMessageInput = $("privateMessageInput");
+    els.privateSendBtn = $("privateSendBtn");
+
+    els.userView = $("userView");
+    els.backFromUserViewBtn = $("backFromUserViewBtn");
+    els.userViewTitle = $("userViewTitle");
+    els.userViewAvatar = $("userViewAvatar");
+    els.userViewName = $("userViewName");
+    els.userViewStatus = $("userViewStatus");
+    els.userViewAge = $("userViewAge");
+    els.userViewGender = $("userViewGender");
+    els.userViewNationality = $("userViewNationality");
+    els.userViewActivity = $("userViewActivity");
+    els.userViewBio = $("userViewBio");
+    els.startPrivateChatBtn = $("startPrivateChatBtn");
+    els.closeUserViewBtn = $("closeUserViewBtn");
+  }
+
+  function init() {
+    cacheElements();
+    createMonitorPanel();
+    readStorage();
+    seedData();
+    syncCurrentSessionFromStorage();
+    attachEvents();
+    setupIntervals();
+    renderAll();
+    openInitialView();
+
+    if (canUseCurrentSession()) {
+      markActivity();
+    }
+  }
+
+  window.KAREEM3 = {
+    refresh: renderAll,
+    logout: logoutCurrentAccount,
+    openProfile: openSelfProfile,
+    openUserProfileById,
+    openPrivateChat,
+    state: () => ({
+      currentAccount: getCurrentAccount(),
+      currentSession: getCurrentSession(),
+      unreadNotifications: getUnreadNotificationCount(),
+      view: state.view,
+    }),
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();
