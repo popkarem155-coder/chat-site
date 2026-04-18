@@ -1,275 +1,367 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>شات نار - كريم 3 المحدث</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0e0e12" />
+  <meta name="color-scheme" content="dark" />
+  <title>شات نار</title>
   <link rel="stylesheet" href="style.css" />
+  <script defer src="main.js"></script>
 </head>
-<body>
-  <div id="app" class="app-shell">
+<body class="app-shell">
 
-    <!-- الهيدر -->
-    <header class="topbar">
-      <button id="openLeftPanelBtn" class="icon-btn messages-btn" aria-label="فتح الرسائل الخاصة">
-        💬
-        <span id="privateMessagesBadge" class="badge hidden">0</span>
-      </button>
-
-      <div class="brand center-brand">
+  <!-- شاشة تسجيل الدخول / إنشاء الحساب -->
+  <div id="authOverlay" class="overlay is-hidden" aria-hidden="true">
+    <div class="overlay-card auth-card" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+      <div class="brand-mark">
+        <span class="brand-dot"></span>
         <span class="brand-title">شات نار</span>
       </div>
 
-      <button id="openRightPanelBtn" class="icon-btn" aria-label="فتح القائمة">
-        ☰
+      <h1 id="authTitle" class="overlay-title">تسجيل الدخول</h1>
+      <p class="overlay-subtitle">
+        اكتب اسمك وكلمة المرور عشان تكمل التفاعل وتفتح الشات الخاص وتعدّل ملفك الشخصي.
+      </p>
+
+      <form id="authForm" class="form-grid" autocomplete="off">
+        <label class="field">
+          <span class="field-label">الاسم</span>
+          <input id="authName" name="authName" type="text" inputmode="text" autocomplete="username" placeholder="اكتب اسمك" required />
+        </label>
+
+        <label class="field">
+          <span class="field-label">كلمة المرور</span>
+          <input id="authPassword" name="authPassword" type="password" autocomplete="current-password" placeholder="اكتب كلمة المرور" required />
+        </label>
+
+        <div class="auth-actions">
+          <button id="authSubmit" type="submit" class="btn btn-primary">دخول / إنشاء حساب</button>
+          <button id="authCancel" type="button" class="btn btn-ghost">إغلاق</button>
+        </div>
+      </form>
+
+      <p class="micro-note">
+        الحساب يفضل شغال لمدة 24 ساعة، وبعدها يحصل تسجيل خروج تلقائي.
+      </p>
+    </div>
+  </div>
+
+  <!-- التطبيق الأساسي -->
+  <div id="app" class="app" data-view="home">
+
+    <!-- الهيدر -->
+    <header class="topbar">
+      <button id="privateShortcutBtn" class="icon-btn icon-btn-left" type="button" aria-label="الرسائل الخاصة">
+        <span class="icon">✉</span>
+      </button>
+
+      <button id="appTitleBtn" class="brand-btn" type="button" aria-label="تحديث الشات">
+        <span class="brand-text">شات نار</span>
+      </button>
+
+      <button id="menuBtn" class="icon-btn icon-btn-right" type="button" aria-label="القائمة">
+        <span class="icon">☰</span>
       </button>
     </header>
 
-    <!-- شريط البحث -->
-    <section class="search-wrap">
-      <div class="search-box">
-        <input
-          id="globalSearchInput"
-          type="text"
-          placeholder="ابحث عن مستخدم..."
-          autocomplete="off"
-        />
+    <!-- شريط صغير فوق المحتوى -->
+    <section class="status-strip" aria-label="حالة الحساب والواجهة">
+      <div class="status-pill">
+        <span class="status-dot"></span>
+        <span id="currentUserState">زائر</span>
       </div>
 
-      <div id="globalSearchResults" class="search-results hidden card"></div>
+      <button id="profileMonitorBtn" class="status-pill status-pill-btn" type="button">
+        <span class="status-icon">🔔</span>
+        <span>منظار ملفك</span>
+        <span id="profileMonitorCount" class="count-badge">0</span>
+      </button>
     </section>
 
     <!-- الصفحة الرئيسية -->
-    <main class="content-grid">
+    <main id="homeView" class="home-view">
 
-      <!-- البلوك 1: المتصلين الآن -->
-      <section class="section-card card">
-        <div class="section-head">
-          <h2>المتصلين الآن</h2>
-          <span>الأحدث يظهر في الأعلى</span>
+      <!-- المتصلين الآن -->
+      <section class="panel panel-soft" aria-labelledby="onlineUsersTitle">
+        <div class="panel-head">
+          <h2 id="onlineUsersTitle">المتصلين الآن</h2>
+          <span class="panel-chip">Live</span>
         </div>
-
-        <div id="onlineUsersList" class="users-list horizontal">
-          <!-- online users -->
+        <div id="onlineUsersEmpty" class="empty-state">
+          مفيش مستخدمين متصلين دلوقتي.
         </div>
+        <div id="onlineUsersList" class="user-list" role="list"></div>
       </section>
 
-      <!-- البلوك 2: المستخدمين المميزين -->
-      <section class="section-card card">
-        <div class="section-head">
-          <h2>المستخدمين المميزين</h2>
-          <span>يختفون بعد 10 دقائق بدون نشاط</span>
+      <!-- المستخدمين المميزين -->
+      <section class="panel panel-soft" aria-labelledby="featuredUsersTitle">
+        <div class="panel-head">
+          <h2 id="featuredUsersTitle">المستخدمين المميزين</h2>
+          <span class="panel-chip">+2h</span>
         </div>
-
-        <div id="featuredUsersList" class="users-list horizontal">
-          <!-- featured users -->
+        <div id="featuredUsersEmpty" class="empty-state">
+          لسه مفيش مستخدمين مميزين.
         </div>
+        <div id="featuredUsersList" class="user-list" role="list"></div>
       </section>
 
-      <!-- البلوك 3: الشات العام -->
-      <section class="section-card chat-card card">
-        <div class="section-head">
-          <h2>الشات العام</h2>
-          <span>رسائل نصية + إيموجي فقط</span>
+      <!-- الشات العام -->
+      <section class="panel chat-panel" aria-labelledby="publicChatTitle">
+        <div class="panel-head chat-panel-head">
+          <div>
+            <h2 id="publicChatTitle">الشات العام</h2>
+            <p class="panel-subtitle">كل الناس تقدر تشوف، والكتابة تتطلب تسجيل دخول أول مرة.</p>
+          </div>
         </div>
 
-        <div id="publicMessages" class="messages-list" aria-live="polite">
-          <!-- public messages -->
+        <div id="publicMessages" class="messages-stream" aria-live="polite" aria-relevant="additions text">
+          <div class="messages-placeholder">
+            لسه ما فيش رسائل ظاهرة هنا.
+          </div>
         </div>
 
-        <form id="publicMessageForm" class="message-form" autocomplete="off">
-          <input
-            id="publicMessageInput"
-            type="text"
-            placeholder="اكتب رسالة..."
-          />
-          <button type="submit" class="btn primary">إرسال</button>
+        <form id="publicMessageForm" class="composer" autocomplete="off">
+          <label class="sr-only" for="publicMessageInput">اكتب رسالة عامة</label>
+          <input id="publicMessageInput" class="composer-input" type="text" placeholder="اكتب رسالتك..." />
+          <button id="publicSendBtn" class="composer-send" type="submit">إرسال</button>
         </form>
       </section>
-
     </main>
 
-    <!-- القائمة اليمنى -->
-    <aside id="rightPanel" class="side-panel right-panel">
-      <div class="panel-head">
-        <h3>القائمة</h3>
-        <button id="closeRightPanelBtn" class="icon-btn" aria-label="إغلاق القائمة">✕</button>
+    <!-- القائمة الجانبية الرئيسية -->
+    <aside id="menuDrawer" class="drawer is-hidden" aria-hidden="true">
+      <div class="drawer-head">
+        <button id="openMyProfileFromMenu" class="profile-card" type="button">
+          <div class="avatar avatar-lg" id="menuAvatar">ك</div>
+          <div class="profile-card-text">
+            <strong id="menuUserName">ملفي الشخصي</strong>
+            <span id="menuUserMeta">اضغط لفتح ملفك وتعديل بياناتك</span>
+          </div>
+        </button>
       </div>
 
-      <section class="profile-summary card">
-        <div id="profileAvatar" class="profile-avatar">👤</div>
-        <div class="profile-meta">
-          <h4 id="profileName">اسمك هنا</h4>
-          <p id="profileUsername">@username</p>
+      <div class="drawer-section">
+        <label class="search-box" for="userSearchInput">
+          <span class="search-label">بحث عن المستخدمين</span>
+          <input id="userSearchInput" type="search" placeholder="اكتب الاسم..." autocomplete="off" />
+        </label>
+
+        <div class="drawer-subhead">
+          <h3>النتائج</h3>
+          <span id="searchResultCount" class="tiny-count">0</span>
         </div>
-      </section>
 
-      <nav class="menu-list">
-        <button id="visitedProfileBtn" class="menu-item">
-          <span class="menu-icon">👁️</span>
-          <span>من زار ملفك</span>
-          <span id="visitedBadge" class="badge hidden">0</span>
+        <div id="userSearchResults" class="search-results">
+          <div class="empty-state empty-state-small">
+            اكتب اسم المستخدم عشان يظهر في النتائج.
+          </div>
+        </div>
+      </div>
+
+      <nav class="drawer-nav" aria-label="أدوات القائمة">
+        <button id="drawerProfileBtn" class="drawer-link" type="button">
+          <span class="drawer-link-icon">👤</span>
+          <span>ملفي الشخصي</span>
         </button>
 
-        <button id="settingsBtn" class="menu-item">
-          <span class="menu-icon">⚙️</span>
-          <span>إعدادات التطبيق</span>
+        <button id="drawerMonitorBtn" class="drawer-link" type="button">
+          <span class="drawer-link-icon">🔔</span>
+          <span>منظار ملفك</span>
+          <span id="drawerMonitorBadge" class="count-badge">0</span>
         </button>
 
-        <button id="logoutBtn" class="menu-item danger">
-          <span class="menu-icon">🚪</span>
+        <button id="drawerSettingsBtn" class="drawer-link" type="button">
+          <span class="drawer-link-icon">⚙</span>
+          <span>الضبط</span>
+        </button>
+
+        <button id="drawerLogoutBtn" class="drawer-link" type="button">
+          <span class="drawer-link-icon">⎋</span>
           <span>تسجيل الخروج</span>
         </button>
       </nav>
-
-      <section id="adminFilesPanel" class="admin-panel card hidden">
-        <h3>حالة الملفات</h3>
-        <ul class="status-list">
-          <li><span>index.html</span><b id="statusIndex">●</b></li>
-          <li><span>main.js</span><b id="statusMain">●</b></li>
-          <li><span>firebase.js</span><b id="statusFirebase">●</b></li>
-          <li><span>style.css</span><b id="statusStyle">●</b></li>
-        </ul>
-      </section>
     </aside>
 
-    <!-- القائمة اليسرى: الرسائل الخاصة -->
-    <aside id="leftPanel" class="side-panel left-panel">
-      <div class="panel-head">
-        <h3>المراسلات الخاصة</h3>
-        <button id="closeLeftPanelBtn" class="icon-btn" aria-label="إغلاق الرسائل الخاصة">✕</button>
-      </div>
-
-      <section class="private-search card">
-        <input
-          id="privateSearchInput"
-          type="text"
-          placeholder="ابحث في المحادثات الخاصة..."
-          autocomplete="off"
-        />
-      </section>
-
-      <section class="private-users card">
-        <h4>المحادثات</h4>
-        <div id="privateChatsList" class="users-list vertical">
-          <!-- recent private chats -->
+    <!-- صفحة ملفي الشخصي -->
+    <section id="profileView" class="page is-hidden" aria-labelledby="profileTitle">
+      <header class="page-head">
+        <button id="backFromProfileBtn" class="back-btn" type="button">رجوع</button>
+        <div>
+          <h2 id="profileTitle">ملفي الشخصي</h2>
+          <p class="panel-subtitle">كل تعديل هنا بيتحفظ على نفس الحساب.</p>
         </div>
-      </section>
-    </aside>
-
-    <!-- صفحة البروفايل -->
-    <section id="profileScreen" class="profile-screen hidden">
-      <header class="topbar">
-        <button id="backToMainBtn" class="icon-btn" aria-label="رجوع">←</button>
-        <div class="brand center-brand">
-          <span class="brand-title">البروفايل</span>
-        </div>
-        <div class="spacer"></div>
       </header>
 
-      <main class="profile-page card">
-        <div class="profile-hero">
-          <div id="profilePageAvatar" class="profile-avatar large">👤</div>
-          <div class="profile-title">
-            <h1 id="profilePageName">اسم المستخدم</h1>
-            <p id="profilePageUsername">@username</p>
+      <form id="profileForm" class="profile-form" autocomplete="off">
+        <section class="profile-card-block">
+          <div class="profile-avatar-wrap">
+            <div class="avatar avatar-xl" id="profileAvatarPreview">؟</div>
+            <label class="file-btn" for="profileImageInput">
+              تغيير الصورة
+            </label>
+            <input id="profileImageInput" type="file" accept="image/*" hidden />
           </div>
+
+          <div class="profile-meta">
+            <div class="profile-status-line">
+              <span class="status-dot"></span>
+              <span id="profileOnlineState">متصل / غير متصل</span>
+            </div>
+            <p id="profileLastSeen" class="profile-muted">آخر نشاط غير محدد</p>
+          </div>
+        </section>
+
+        <div class="form-grid profile-grid">
+          <label class="field">
+            <span class="field-label">الاسم</span>
+            <input id="profileName" type="text" placeholder="اسمك" required />
+          </label>
+
+          <label class="field">
+            <span class="field-label">كلمة المرور</span>
+            <input id="profilePassword" type="password" placeholder="كلمة المرور" required />
+          </label>
+
+          <label class="field">
+            <span class="field-label">السن</span>
+            <input id="profileAge" type="number" min="1" max="120" placeholder="السن" />
+          </label>
+
+          <label class="field">
+            <span class="field-label">الجنس</span>
+            <select id="profileGender">
+              <option value="">اختر</option>
+              <option value="ذكر">ذكر</option>
+              <option value="أنثى">أنثى</option>
+              <option value="أفضل عدم التحديد">أفضل عدم التحديد</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span class="field-label">الجنسية</span>
+            <input id="profileNationality" type="text" placeholder="الجنسية" />
+          </label>
+
+          <label class="field field-full">
+            <span class="field-label">نبذة عنك</span>
+            <textarea id="profileBio" rows="5" placeholder="اكتب نبذة قصيرة عنك..."></textarea>
+          </label>
         </div>
 
-        <div class="profile-info">
-          <div class="info-row">
-            <span>الاسم</span>
-            <strong id="infoName">-</strong>
-          </div>
-          <div class="info-row">
-            <span>السن</span>
-            <strong id="infoAge">-</strong>
-          </div>
-          <div class="info-row">
-            <span>الجنسية</span>
-            <strong id="infoNationality">-</strong>
-          </div>
-          <div class="info-row">
-            <span>الجنس</span>
-            <strong id="infoGender">-</strong>
-          </div>
-          <div class="info-row column">
-            <span>نبذة عني</span>
-            <strong id="infoBio">-</strong>
-          </div>
+        <div class="auth-actions">
+          <button id="saveProfileBtn" class="btn btn-primary" type="submit">حفظ الملف</button>
+          <button id="closeProfileBtn" class="btn btn-ghost" type="button">إغلاق</button>
         </div>
-
-        <button id="editProfileBtn" class="btn primary full-width">تعديل الملف الشخصي</button>
-
-        <div id="editProfilePanel" class="edit-panel hidden">
-          <label class="field">
-            <span>الاسم</span>
-            <input id="editName" type="text" />
-          </label>
-
-          <label class="field">
-            <span>السن</span>
-            <input id="editAge" type="number" min="1" max="120" />
-          </label>
-
-          <label class="field">
-            <span>الجنسية</span>
-            <input id="editNationality" type="text" />
-          </label>
-
-          <label class="field">
-            <span>الجنس</span>
-            <input id="editGender" type="text" />
-          </label>
-
-          <label class="field">
-            <span>نبذة عني</span>
-            <textarea id="editBio" rows="4"></textarea>
-          </label>
-
-          <button id="saveProfileBtn" class="btn primary full-width">حفظ التعديلات</button>
-        </div>
-
-        <div class="profile-actions">
-          <button id="messageFromProfileBtn" class="btn secondary full-width">مراسلة</button>
-        </div>
-      </main>
+      </form>
     </section>
 
     <!-- صفحة الشات الخاص -->
-    <section id="privateChatScreen" class="private-chat-screen hidden">
-      <header class="topbar">
-        <button id="backFromPrivateChatBtn" class="icon-btn" aria-label="رجوع">←</button>
-        <div class="brand center-brand">
-          <span class="brand-title" id="privateChatTitle">شات خاص</span>
+    <section id="privateView" class="page is-hidden" aria-labelledby="privateTitle">
+      <header class="page-head">
+        <button id="backFromPrivateBtn" class="back-btn" type="button">رجوع</button>
+        <div>
+          <h2 id="privateTitle">الرسائل الخاصة</h2>
+          <p class="panel-subtitle">آخر شخص اتكلمت معاه يظهر في الأول.</p>
         </div>
-        <div class="spacer"></div>
       </header>
 
-      <main class="chat-card card">
-        <div class="section-head private-chat-head">
-          <h2 id="privateChatSubtitle">محادثة مستقلة</h2>
-          <span>رسائل خاصة</span>
+      <div class="private-layout">
+        <aside class="private-list-panel">
+          <div class="panel-head panel-head-tight">
+            <h3>آخر المحادثات</h3>
+            <span class="panel-chip">DM</span>
+          </div>
+
+          <div id="privateChatsEmpty" class="empty-state">
+            لسه ما كلمتش حد في الخاص.
+          </div>
+
+          <div id="privateChatsList" class="private-chats-list" role="list"></div>
+        </aside>
+
+        <section class="private-chat-panel" aria-labelledby="privateChatTitle">
+          <header class="private-chat-head">
+            <div class="private-chat-user">
+              <div class="avatar" id="privateChatAvatar">؟</div>
+              <div>
+                <h3 id="privateChatTitle">اختار شخص من القائمة</h3>
+                <p id="privateChatMeta" class="panel-subtitle">هنا هتظهر المحادثة كاملة.</p>
+              </div>
+            </div>
+          </header>
+
+          <div id="privateMessages" class="messages-stream private-messages-stream" aria-live="polite">
+            <div class="messages-placeholder">
+              اختار محادثة عشان تبدأ.
+            </div>
+          </div>
+
+          <form id="privateMessageForm" class="composer" autocomplete="off">
+            <label class="sr-only" for="privateMessageInput">اكتب رسالة خاصة</label>
+            <input id="privateMessageInput" class="composer-input" type="text" placeholder="اكتب رسالتك الخاصة..." />
+            <button id="privateSendBtn" class="composer-send" type="submit">إرسال</button>
+          </form>
+        </section>
+      </div>
+    </section>
+
+    <!-- صفحة المستخدم المعروض -->
+    <section id="userView" class="page is-hidden" aria-labelledby="userViewTitle">
+      <header class="page-head">
+        <button id="backFromUserViewBtn" class="back-btn" type="button">رجوع</button>
+        <div>
+          <h2 id="userViewTitle">ملف المستخدم</h2>
+          <p class="panel-subtitle">عرض ملف أي شخص من البحث أو من الشات.</p>
+        </div>
+      </header>
+
+      <div class="public-profile-card">
+        <div class="public-profile-top">
+          <div class="avatar avatar-xl" id="userViewAvatar">؟</div>
+          <div class="public-profile-meta">
+            <h3 id="userViewName">اسم المستخدم</h3>
+            <p id="userViewStatus" class="profile-muted">الحالة غير محددة</p>
+          </div>
         </div>
 
-        <div id="privateMessages" class="messages-list" aria-live="polite">
-          <!-- private messages -->
+        <div class="profile-details-grid">
+          <div class="detail-box">
+            <span class="detail-label">السن</span>
+            <strong id="userViewAge">—</strong>
+          </div>
+          <div class="detail-box">
+            <span class="detail-label">الجنس</span>
+            <strong id="userViewGender">—</strong>
+          </div>
+          <div class="detail-box">
+            <span class="detail-label">الجنسية</span>
+            <strong id="userViewNationality">—</strong>
+          </div>
+          <div class="detail-box">
+            <span class="detail-label">النشاط</span>
+            <strong id="userViewActivity">—</strong>
+          </div>
         </div>
 
-        <form id="privateMessageForm" class="message-form" autocomplete="off">
-          <input
-            id="privateMessageInput"
-            type="text"
-            placeholder="اكتب رسالة خاصة..."
-          />
-          <button type="submit" class="btn primary">إرسال</button>
-        </form>
-      </main>
+        <div class="bio-box">
+          <span class="detail-label">النبذة</span>
+          <p id="userViewBio">لا توجد نبذة بعد.</p>
+        </div>
+
+        <div class="auth-actions">
+          <button id="startPrivateChatBtn" class="btn btn-primary" type="button">فتح شات خاص</button>
+          <button id="closeUserViewBtn" class="btn btn-ghost" type="button">إغلاق</button>
+        </div>
+      </div>
     </section>
 
   </div>
 
-  <script type="module" src="firebase.js"></script>
-  <script type="module" src="main.js"></script>
+  <noscript>
+    <div class="noscript-banner">
+      لازم تفعيل JavaScript عشان الشات يشتغل.
+    </div>
+  </noscript>
 </body>
 </html>
