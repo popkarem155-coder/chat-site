@@ -3,7 +3,7 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: "Cairo", sans-serif;
+  font-family: Cairo, sans-serif;
 }
 
 body {
@@ -11,7 +11,7 @@ body {
   color: #fff;
 }
 
-/* LAYOUT */
+/* CONTAINER */
 .app-shell {
   max-width: 600px;
   margin: auto;
@@ -23,11 +23,10 @@ body {
   align-items: center;
   justify-content: space-between;
   background: #1a1a22;
-  padding: 12px 15px;
+  padding: 12px;
   position: sticky;
   top: 0;
   z-index: 100;
-  border-bottom: 1px solid #2a2a33;
 }
 
 .center-brand {
@@ -37,16 +36,15 @@ body {
 }
 
 .brand-title {
-  font-size: 18px;
-  font-weight: bold;
   color: #ff4d8d;
+  font-weight: bold;
 }
 
-/* ICON BUTTONS */
+/* ICONS */
 .icon-btn {
   background: none;
   border: none;
-  color: #fff;
+  color: white;
   font-size: 20px;
   cursor: pointer;
 }
@@ -61,18 +59,16 @@ body {
   padding: 10px;
   border-radius: 10px;
   border: none;
-  outline: none;
   background: #1a1a22;
-  color: #fff;
+  color: white;
 }
 
-/* CARDS */
+/* CARD */
 .card {
   background: #1a1a22;
   margin: 10px;
   padding: 12px;
-  border-radius: 14px;
-  border: 1px solid #2a2a33;
+  border-radius: 12px;
 }
 
 .section-head {
@@ -81,18 +77,8 @@ body {
   margin-bottom: 10px;
 }
 
-.section-head h2 {
-  font-size: 14px;
-  color: #ff4d8d;
-}
-
-.section-head span {
-  font-size: 11px;
-  color: #aaa;
-}
-
 /* USERS */
-.users-list.horizontal {
+.users-list {
   display: flex;
   gap: 10px;
   overflow-x: auto;
@@ -100,45 +86,35 @@ body {
 
 .user-chip {
   background: #2a2a33;
-  border: none;
-  border-radius: 12px;
   padding: 8px;
-  min-width: 100px;
-  color: #fff;
-  cursor: pointer;
+  border-radius: 10px;
+  border: none;
+  color: white;
+  min-width: 90px;
 }
 
-.user-avatar {
-  display: block;
-  font-size: 20px;
-  margin-bottom: 5px;
-}
-
-/* MESSAGES */
+/* CHAT */
 .messages-list {
   max-height: 300px;
   overflow-y: auto;
-  margin-bottom: 10px;
-}
-
-.message-item {
-  margin-bottom: 8px;
 }
 
 .message-bubble {
   background: #2a2a33;
   padding: 10px;
   border-radius: 10px;
+  margin-bottom: 8px;
 }
 
-.message-item.mine .message-bubble {
+.mine .message-bubble {
   background: #ff4d8d;
 }
 
-/* FORM */
+/* INPUT */
 .message-form {
   display: flex;
   gap: 8px;
+  margin-top: 10px;
 }
 
 .message-form input {
@@ -147,31 +123,27 @@ body {
   border-radius: 10px;
   border: none;
   background: #2a2a33;
-  color: #fff;
+  color: white;
 }
 
 .btn {
+  padding: 10px;
   border: none;
   border-radius: 10px;
-  padding: 10px 12px;
-  cursor: pointer;
-}
-
-.primary {
   background: #ff4d8d;
-  color: #fff;
+  color: white;
 }
 
-/* SIDE PANELS */
+/* PANELS */
 .side-panel {
   position: fixed;
   top: 0;
   bottom: 0;
-  width: 80%;
+  width: 75%;
   background: #1a1a22;
-  z-index: 200;
   transform: translateX(100%);
   transition: 0.3s;
+  z-index: 200;
 }
 
 .side-panel.open {
@@ -187,27 +159,7 @@ body {
   transform: translateX(0);
 }
 
-.panel-head {
-  display: flex;
-  justify-content: space-between;
-  padding: 10px;
-}
-
-/* BADGE */
-.badge {
-  background: red;
-  padding: 2px 6px;
-  border-radius: 10px;
-  font-size: 10px;
-}
-
+/* FIX */
 .hidden {
   display: none;
-}
-
-/* EMPTY */
-.empty-state {
-  text-align: center;
-  color: #888;
-  padding: 10px;
 }
